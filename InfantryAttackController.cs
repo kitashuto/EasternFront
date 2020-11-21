@@ -16,12 +16,9 @@ public class InfantryAttackController : AttackController
         attackOrder = true;
         this.animator = GetComponent<Animator>();
         this.aud = GetComponent<AudioSource>();
-
         soldierMove = gameObject.GetComponent<Move>();
         soldierHP = gameObject.GetComponent<SoldierHP>();
-
         DefaultState();
-
         nearEnemy = null;
     }
 
@@ -31,13 +28,10 @@ public class InfantryAttackController : AttackController
         if (attackOrder == true)
         {
             AttackMethod();
-
         }
         else if (attackOrder == false)
         {
-            
             time += Time.deltaTime;
-            
                 if (idleMotion == true)
                 {
                     animator.SetTrigger("IdleTrigger");
@@ -47,20 +41,14 @@ public class InfantryAttackController : AttackController
                 shootDelta = -0.5f;
                 gunUpMotion = true;
                 nearEnemy = null;
-            
             if (time > 0.01f)
             {
-                
-                
                 time = 0;
                 attackOrder = true;
-                
             }
         }
         WeaponSoundController();
     }
-
-
 
     public void Reload()
     {
