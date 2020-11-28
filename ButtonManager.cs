@@ -54,6 +54,7 @@ public class ButtonManager : MonoBehaviour
     public GameObject trainingButton;
     public GameObject ammoCarrierButton;
     public GameObject machineGunButton;
+    public GameObject marksmanButton;
     public GameObject sniperButton;
     public GameObject backToUpgradeButton;
 
@@ -110,9 +111,9 @@ public class ButtonManager : MonoBehaviour
         }
 
 
-        upgradeMenu = new GameObject[] { trainingButton, ammoCarrierButton, machineGunButton, sniperButton, backToUpgradeButton };
+        upgradeMenu = new GameObject[] { trainingButton, ammoCarrierButton, machineGunButton, marksmanButton, sniperButton, backToUpgradeButton };
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 6; i++)
         {
             upgradeMenu[i].SetActive(false);
         }
@@ -252,7 +253,7 @@ public class ButtonManager : MonoBehaviour
             secondMenu[i].SetActive(false);
         }
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 6; i++)
         {
             upgradeMenu[i].SetActive(true);
         }
@@ -364,7 +365,7 @@ public class ButtonManager : MonoBehaviour
         givenMinSpan = 1.5f;
         givenMaxSpan = 1.5f;
         givenAudioClipName = "Mk3SE";
-        givenShootEndRag = 1.5f;
+        givenShootEndRag = 1.3f;
     }
 
 
@@ -386,7 +387,7 @@ public class ButtonManager : MonoBehaviour
         givenMinSpan = 2f;
         givenMaxSpan = 2f;
         givenAudioClipName = "P14SE";
-        givenShootEndRag = 2f;
+        givenShootEndRag = 1.95f;
 
     }
 
@@ -450,6 +451,14 @@ public class ButtonManager : MonoBehaviour
 
 
 
+
+    public void MarksmanButton()
+    {
+
+    }
+
+
+
     public void SniperButton()
     {
 
@@ -459,7 +468,7 @@ public class ButtonManager : MonoBehaviour
 
     public void BackToUpgradeButton()
     {
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 6; i++)
         {
             upgradeMenu[i].SetActive(false);
         }

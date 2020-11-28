@@ -21,7 +21,7 @@ public abstract class AttackController : MonoBehaviour
     public SoldierHP soldierHP;
 
     public GameObject nearEnemy;         //最も近いオブジェクト
-    public float searchTime = 0;    //経過時間
+    public float searchTime;    //経過時間
     public bool gunUpMotion = true;
     public bool reloadMotion = true;
 
@@ -49,7 +49,7 @@ public abstract class AttackController : MonoBehaviour
 
     public float lookSpan;//15～16行目はUnityの教科書p212のししおどしの時間差計算の引用
     public float holdSpan;
-    public float lookDelta = 0f;//SoldierMoveで使うためpublic
+    public float lookDelta;//SoldierMoveで使うためpublic
     public float shootSpan;
     public float shootDelta;//初期値を-5にしないと敵を向いた瞬間攻撃してしまう。だから5(shootSpan)秒巻き戻してからスタートさせる。
     public float minSpan;
@@ -87,8 +87,8 @@ public abstract class AttackController : MonoBehaviour
     //歩兵初期装備Mk3のステータスメソッド
     public void DefaultState()
     {
-        shootSpan = GetRandomTime();
-        shootDelta = -0.5f;
+        //shootSpan = GetRandomTime();  子クラスのstartに書き写したら初弾が早く撃たれることはなくなった。しかしできるならその処理をこっちに書きたい。
+        shootDelta = 0f;
         probability = Probability();
 
         //初期値(Mk3)
@@ -96,18 +96,18 @@ public abstract class AttackController : MonoBehaviour
         hitRate = 20;
         soldierRange = 3f;
         rifleSE = mk3SE;
-        shootEndRag = 1.5f;
-        reloadSpan = 4.5f;
+        shootEndRag = 1.3f;
+        reloadSpan = 4.75f;
 
         minSpan = 1.5f;
-        maxSpan = 1.5f;
+        maxSpan = 2f;
 
         remainingAmmo = 100;
         magazine = 3;
         clip = 3;
 
-        lookSpan = 0.75f;
-        holdSpan = 1.5f;
+        lookSpan = 0.5f;
+        holdSpan = 1.25f;
     }
 
 

@@ -7,6 +7,11 @@ public class Move : MonoBehaviour
 
     bool moveGo;
     bool moveTorF;
+    bool shootEndFlag;
+    public bool shootToMove;
+    public float shootEndTime;
+    Vector3 pos1;
+    Quaternion rotation;
 
     public float speed;//parentの宣言を消したため、parentであった部分は全てtransformに。またResetメソッドも削除。
     float speedCycle;
@@ -33,21 +38,27 @@ public class Move : MonoBehaviour
 
     public void MoveTo(Vector2 pos)
     {
-        if (soldierHP.HP >= 0)
+        if (soldierHP.HP < 1) return;                
+        CurrentState = State.Move;
+        pos1 = Camera.main.WorldToScreenPoint(transform.localPosition);
+        targetPos = pos;
+        rotation = Quaternion.LookRotation(Vector3.forward, Input.mousePosition - pos1);
+
+        if (infantryAttackController.shootEnd == false)
         {
-            CurrentState = State.Move;
-
-            animator.SetTrigger("MoveTrigger");
-            infantryAttackController.lookDelta = 0;
-            infantryAttackController.shootDelta = -0.5f;
-            infantryAttackController.gunUpMotion = true;
-            
-            var pos1 = Camera.main.WorldToScreenPoint(transform.localPosition);
-            var rotation = Quaternion.LookRotation(Vector3.forward, Input.mousePosition - pos1);
-            transform.localRotation = rotation;
-
-            targetPos = pos;
+            MoveMotion();
         }
+        
+                    
+    }
+
+    public void MoveMotion()
+    {
+        animator.SetTrigger("MoveTrigger");
+        infantryAttackController.lookDelta = 0f;
+        infantryAttackController.shootDelta = 0f;
+        infantryAttackController.gunUpMotion = true;        
+        transform.localRotation = rotation;
     }
 
     void Start() 
@@ -55,8 +66,8 @@ public class Move : MonoBehaviour
         soldierHP = gameObject.GetComponent<SoldierHP>();
         infantryAttackController = gameObject.GetComponent<InfantryAttackController>();
         animator = this.GetComponent<Animator>();
-        
-        
+
+        speed = 1.5f;
     }
 
     void Update()
@@ -97,6 +108,15 @@ public class Move : MonoBehaviour
             }
             animator.SetFloat("Speed", speedCycle * 1.1f); 
         }
-        
+
+
+
+        //p45(shoot == true)だったときの分岐処理。InfantryAttackControllerの射撃ラグを測る処理内にshootToMoveをtrueにするトリガーを設置。このことによりコッキングが終わった後に移動アニメーションが作動する。
+        if(shootToMove == true && CurrentState == State.Move)
+        {            
+            MoveMotion();
+            shootToMove = false;
+        }
+                
     }
 }
