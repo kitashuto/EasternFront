@@ -365,7 +365,7 @@ public class ButtonManager : MonoBehaviour
         givenMinSpan = 1.5f;
         givenMaxSpan = 1.5f;
         givenAudioClipName = "Mk3SE";
-        givenShootEndRag = 1.3f;
+        givenShootEndRag = 1.4f;
     }
 
 
@@ -387,7 +387,7 @@ public class ButtonManager : MonoBehaviour
         givenMinSpan = 2f;
         givenMaxSpan = 2f;
         givenAudioClipName = "P14SE";
-        givenShootEndRag = 1.95f;
+        givenShootEndRag = 1.9f;
 
     }
 
