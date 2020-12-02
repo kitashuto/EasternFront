@@ -33,17 +33,30 @@ public class InfantryAnimation : MonoBehaviour
             animator.runtimeAnimatorController = controller[1];            
             
         }
-        else if (course == "Mk3Sniper")
+        else if (course == "Mk3Marksman")
         {
 
             animator.runtimeAnimatorController = controller[2];
 
         }
-        else if (course == "P14Sniper")
+        else if (course == "P14Marksman")
         {
 
             animator.runtimeAnimatorController = controller[3];
 
         }
+        else if (course == "Mk3Sniper")
+        {
+
+            animator.runtimeAnimatorController = controller[4];
+
+        }
+        else if (course == "P14Sniper")
+        {
+
+            animator.runtimeAnimatorController = controller[5];
+
+        }
+        Debug.Log(course);
     }
 }

@@ -16,7 +16,7 @@ public class EnemyHP : MonoBehaviour, IDamagable
 
         if (HP <= 0)
         {
-            this.animator.SetTrigger("DeadTrigger");
+            //this.animator.SetTrigger("DeadTrigger");
             Debug.Log("Enemyを倒した");
             t = true;
         }

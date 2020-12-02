@@ -57,7 +57,7 @@ public class Move : MonoBehaviour
         animator.SetTrigger("MoveTrigger");
         infantryAttackController.lookDelta = 0f;
         infantryAttackController.shootDelta = 0f;
-        infantryAttackController.gunUpMotion = true;        
+        infantryAttackController.upMotion = true;        
         transform.localRotation = rotation;
     }
 

@@ -20,6 +20,7 @@ public class InfantryAttackController : AttackController
         soldierMove = gameObject.GetComponent<Move>();
         soldierHP = gameObject.GetComponent<SoldierHP>();
         move = gameObject.GetComponent<Move>();
+        infantryAnimation = gameObject.GetComponent<InfantryAnimation>();
 
         DefaultState();
         shootSpan = GetRandomTime();
@@ -31,8 +32,16 @@ public class InfantryAttackController : AttackController
     {
         if (attackOrder == true)
         {
-            AttackMethod();
-            ReloadMethod();
+            if (infantryAnimation.course == "Mk3" || infantryAnimation.course == "P14")
+            {
+                AttackMethod();
+                ReloadMethod();
+            }
+            else if (infantryAnimation.course == "Mk3Marksman" || infantryAnimation.course == "P14Marksman")
+            {
+                SniperAttackMethod();
+                ReloadMethod();
+            }
 
         }
         else if (attackOrder == false)
@@ -47,7 +56,7 @@ public class InfantryAttackController : AttackController
                 }
                 lookDelta = 0f;
                 shootDelta = 0f;
-                gunUpMotion = true;
+                upMotion = true;
                 nearEnemy = null;
             
             if (time > 0.01f)

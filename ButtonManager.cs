@@ -454,7 +454,20 @@ public class ButtonManager : MonoBehaviour
 
     public void MarksmanButton()
     {
+        flg = true;
+        aud.PlayOneShot(buttonClickWeapon);
+        moveManager.attatch = false;
 
+        compareTagName = "Infantry";
+        weaponName = "Mk3Marksman";
+
+        givenAttackPower = 45;
+        givenSoldierRange = 4.5f;
+        givenClip = 10;
+        givenMinSpan = 1.5f;
+        givenMaxSpan = 1.5f;
+        givenAudioClipName = "Mk3SE";
+        givenShootEndRag = 1.4f;
     }
 
 

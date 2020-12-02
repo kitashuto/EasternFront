@@ -22,12 +22,12 @@ public abstract class AttackController : MonoBehaviour
 
     public GameObject nearEnemy;         //最も近いオブジェクト
     public float searchTime;    //経過時間
-    public bool gunUpMotion = true;
+    public bool upMotion;
+    public bool shootToDown;
     public bool downMotion;
     public bool reloadMotion;
 
     public EnemyHP enemyHPScript;
-    public int enemyHP;
     public int probability;//全体で使える百分率
 
     public int attackPower;
@@ -50,6 +50,7 @@ public abstract class AttackController : MonoBehaviour
 
     public float lookSpan;//15～16行目はUnityの教科書p212のししおどしの時間差計算の引用
     public float holdSpan;
+    public float lieDownSpan;
     public float lookDelta;//SoldierMoveで使うためpublic
     public float shootSpan;
     public float shootDelta;//初期値を-5にしないと敵を向いた瞬間攻撃してしまう。だから5(shootSpan)秒巻き戻してからスタートさせる。
@@ -60,8 +61,11 @@ public abstract class AttackController : MonoBehaviour
     public bool accuracyBonus2 = false;
 
     public bool attackOrder;
+    public bool outOfRange;
     public bool idleMotion = false;
+    public float idleTimer;
     public Move move;
+    public InfantryAnimation infantryAnimation;
 
 
 
@@ -106,11 +110,12 @@ public abstract class AttackController : MonoBehaviour
         maxSpan = 2f;
 
         remainingAmmo = 100;
-        magazine = 3;
-        clip = 3;
+        magazine = 10;
+        clip = 10;
 
         lookSpan = 0.5f;
         holdSpan = 1.25f;
+        lieDownSpan = 2.3f;
     }
 
 
@@ -155,8 +160,6 @@ public abstract class AttackController : MonoBehaviour
 
         }
 
-
-
         //射撃時の行動
         if (nearEnemy != null)
         {
@@ -168,19 +171,22 @@ public abstract class AttackController : MonoBehaviour
 
             AccuracyBonus();
 
-            if (shootRange <= soldierRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0 && attackOrder == true)//!=の後はsoldierMoveではなく元となるSoldierMoveを指定
+            //敵がレンジ内の時
+            if (shootRange <= soldierRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0 )//!=の後はsoldierMoveではなく元となるSoldierMoveを指定
             {
-
+                
                 this.lookDelta += Time.deltaTime;//Unityの教科書p212,スクリプト13行目
                 if (lookDelta > lookSpan && magazine >= 1)
                 {
                     var vec1 = (p2 - p1).normalized;
-                    this.transform.rotation = Quaternion.FromToRotation(Vector3.up, vec1);
-
-                    if (lookDelta > holdSpan && gunUpMotion == true)
+                    if (shootEnd == false)
+                    {
+                        this.transform.rotation = Quaternion.FromToRotation(Vector3.up, vec1);
+                    }
+                    if (lookDelta > holdSpan && upMotion == true)
                     {
                         animator.SetTrigger("UpTrigger");
-                        gunUpMotion = false;
+                        upMotion = false;
                     }
 
                     if (lookDelta > holdSpan)
@@ -209,50 +215,239 @@ public abstract class AttackController : MonoBehaviour
                             shootEnd = true;
 
                         }
-
                     }
                 }
-            }
-            else if (shootRange > soldierRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0 && attackOrder == true && magazine != 0)
-            {
-                if (shootEnd == false)
+                if (outOfRange == false)
                 {
-                    downMotion = true;
-                    if (downMotion == true)
-                    {
-                        animator.SetTrigger("DownTrigger");
-                        downMotion = false;
-                    }
+                    upMotion = true;
+                    outOfRange = true;
                 }
-                else
-                {
-                    if (downMotion == true)
-                    {
-                        animator.SetTrigger("DownTrigger");
-                        downMotion = false;
-                    }
-
-                }
-                animator.SetTrigger("IdleTrigger");
-                lookDelta = 0;
             }
-            else if (allAmmo == 0)
+
+            //敵がレンジ外の時
+            else if ((shootRange > soldierRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0 && magazine != 0)|| allAmmo == 0 )
             {
-                //animator.SetTrigger("DownTrigger");
-                //animator.SetTrigger("IdleTrigger");
+                if (outOfRange == true)
+                {
+                    if (shootToDown == false)
+                    {
+                        downMotion = true;
+                        DownToIdleMotion();
+                    }
+                    else if(shootToDown == true)
+                    {
+                        DownToIdleMotion();
+                        shootToDown = false;
+                    }
+                    outOfRange = false;
+                }
+                
                 lookDelta = 0;
+                shootDelta = 0;
             }
-
         }
-        else
-        {
+        
+        else if (nearEnemy == null && downMotion == true)
+        {            
+            DownToIdleMotion();
+            downMotion = false;
             lookDelta = 0;
+            shootDelta = 0;
         }
         allAmmo = remainingAmmo + magazine;
         Debug.Log("残弾数" + allAmmo);
 
+        //射撃後のラグを測る
+        if (shootEnd == true)
+        {
+            shootEndDelta += Time.deltaTime;
+            if (shootEndDelta > shootEndRag)
+            {
+                magazine--;
+                downMotion = true;               
+                shootEndDelta = 0;
+                shootEnd = false;
+                shootToDown = true;
+                move.shootToMove = true;
+                //moveGoサイン。reloadGoサイン。の処理。
+            }
+        }
+
+    }
 
 
+
+
+
+    //狙撃手用攻撃メソッド
+    public void SniperAttackMethod()
+    {
+        if (soldierHP.HP < 1) return;
+
+        //ここからセミオート攻撃モーション(State.Move以外)]
+
+        searchTime += Time.deltaTime;
+
+        if (searchTime >= 0.5f)
+        {
+            string[] tagNameArray = { "Enemy", "EnemyOfficer" };
+
+            //最も近かったオブジェクトを取得
+            nearEnemy = searchTag(gameObject, tagNameArray);
+
+            //経過時間を初期化
+            searchTime = 0;
+
+        }
+
+        //射撃時の行動
+        if (nearEnemy != null)
+        {
+            Vector2 p1 = transform.position;
+            Vector2 p2 = nearEnemy.transform.position;
+            Vector2 dir = p2 - p1;
+            shootRange = dir.magnitude;
+
+
+            AccuracyBonus();
+
+            //敵がレンジ内の時
+            if (soldierRange * 1/2 < shootRange && shootRange <= soldierRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0)//!=の後はsoldierMoveではなく元となるSoldierMoveを指定
+            {
+
+                this.lookDelta += Time.deltaTime;//Unityの教科書p212,スクリプト13行目
+                if (lookDelta > lookSpan && magazine >= 1)
+                {
+                    var vec1 = (p2 - p1).normalized;
+                    if (shootEnd == false)
+                    {
+                        this.transform.rotation = Quaternion.FromToRotation(Vector3.up, vec1);
+                    }
+                    if (lookDelta > holdSpan && upMotion == true)
+                    {
+                        animator.SetTrigger("LieDownTrigger");
+                        upMotion = false;
+                        shootSpan += 1f;
+                    }
+
+                    if (lookDelta > holdSpan)
+                    {
+
+
+                        //animator.SetTrigger("ReadyTrigger");//moveすることによってこのアニメを終わらせたい
+                        shootDelta += Time.deltaTime;
+
+                        if (shootDelta > shootSpan)
+                        {//発砲モーション付ける                                                                                           
+                            animator.SetTrigger("ProneFireTrigger");//このアニメが終わるまではmoveできないようにしたい
+                            aud.PlayOneShot(this.rifleSE);
+
+                            if (probability < hitRate)
+                            {
+                                nearEnemy.GetComponent<IDamagable>().AddDamage(attackPower);
+                            }
+
+                            //attackPower = 30;
+                            probability = Probability();
+                            shootSpan = GetRandomTime();
+                            move.shootToMove = false;//ここにいれないと2発目以降MoveのMoveMotion(2)の処理がうまくいかない
+
+                            shootDelta = 0f;
+                            shootEnd = true;
+
+                        }
+                    }
+                }
+                if (outOfRange == false)
+                {
+                    upMotion = true;
+                    outOfRange = true;
+                }
+            }
+            if (soldierRange * 1 / 2 >= shootRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0)//!=の後はsoldierMoveではなく元となるSoldierMoveを指定
+            {
+
+                this.lookDelta += Time.deltaTime;//Unityの教科書p212,スクリプト13行目
+                if (lookDelta > lookSpan && magazine >= 1)
+                {
+                    var vec1 = (p2 - p1).normalized;
+                    if (shootEnd == false)
+                    {
+                        this.transform.rotation = Quaternion.FromToRotation(Vector3.up, vec1);
+                    }
+                    if (lookDelta > lieDownSpan && upMotion == true)
+                    {
+                        animator.SetTrigger("UpTrigger");
+                        upMotion = false;
+                    }
+
+                    if (lookDelta > lieDownSpan)
+                    {
+
+
+                        //animator.SetTrigger("ReadyTrigger");//moveすることによってこのアニメを終わらせたい
+                        shootDelta += Time.deltaTime;
+
+                        if (shootDelta > shootSpan)
+                        {//発砲モーション付ける                                                                                           
+                            animator.SetTrigger("FireTrigger");//このアニメが終わるまではmoveできないようにしたい
+                            aud.PlayOneShot(this.rifleSE);
+
+                            if (probability < hitRate)
+                            {
+                                nearEnemy.GetComponent<IDamagable>().AddDamage(attackPower);
+                            }
+
+                            //attackPower = 30;
+                            probability = Probability();
+                            shootSpan = GetRandomTime();
+                            move.shootToMove = false;//ここにいれないと2発目以降MoveのMoveMotion(2)の処理がうまくいかない
+
+                            shootDelta = 0f;
+                            shootEnd = true;
+
+                        }
+                    }
+                }
+                if (outOfRange == false)
+                {
+                    upMotion = true;
+                    outOfRange = true;
+                }
+            }
+
+            //敵がレンジ外の時
+            else if ((shootRange > soldierRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0 && magazine != 0) || allAmmo == 0)
+            {
+                if (outOfRange == true)
+                {
+                    if (shootToDown == false)
+                    {
+                        downMotion = true;
+                        DownToIdleMotion();
+                    }
+                    else if (shootToDown == true)
+                    {
+                        DownToIdleMotion();
+                        shootToDown = false;
+                    }
+                    outOfRange = false;
+                }
+
+                lookDelta = 0;
+                shootDelta = 0;
+            }
+        }
+
+        else if (nearEnemy == null && downMotion == true)
+        {
+            DownToIdleMotion();
+            downMotion = false;
+            lookDelta = 0;
+            shootDelta = 0;
+        }
+        allAmmo = remainingAmmo + magazine;
+        Debug.Log("残弾数" + allAmmo);
 
         //射撃後のラグを測る
         if (shootEnd == true)
@@ -264,11 +459,33 @@ public abstract class AttackController : MonoBehaviour
                 downMotion = true;
                 shootEndDelta = 0;
                 shootEnd = false;
+                shootToDown = true;
                 move.shootToMove = true;
                 //moveGoサイン。reloadGoサイン。の処理。
             }
         }
 
+    }
+
+
+
+
+    public void DownToIdleMotion()
+    {
+        if (downMotion == true)
+        {
+            animator.SetTrigger("DownTrigger");
+            idleMotion = true;
+            downMotion = false;
+        }
+
+        idleTimer += Time.deltaTime;
+
+        if (idleTimer > 0.08f && idleMotion == true)
+        {
+            animator.SetTrigger("IdleTrigger");
+            idleMotion = false;
+        }
     }
 
 
@@ -285,7 +502,7 @@ public abstract class AttackController : MonoBehaviour
                 reloadDelta += Time.deltaTime;
 
 
-                //gunUpMotion = false;←これ必要かわからない
+                //upMotion = false;←これ必要かわからない
                 if (downMotion == true)
                 {
                     animator.SetTrigger("DownTrigger");
@@ -300,7 +517,7 @@ public abstract class AttackController : MonoBehaviour
                 if (reloadDelta > reloadSpan)
                 {
                     animator.SetTrigger("IdleTrigger");
-                    gunUpMotion = true;
+                    upMotion = true;
                     lookDelta = 0f;
                     shootDelta = 0f;
                     magazine += clip;
@@ -340,11 +557,11 @@ public abstract class AttackController : MonoBehaviour
             tmpDis = Vector2.Distance(obs.transform.position, nowObj.transform.position);
 
             enemyHPScript = obs.GetComponent<EnemyHP>();
-            enemyHP = enemyHPScript.HP;
+
 
             //オブジェクトの距離が近いか、距離0であればオブジェクト名を取得
             //一時変数に距離を格納
-            if (enemyHP >= 1)//下のifとまとめてもいいかも
+            if (enemyHPScript.HP >= 1)//下のifとまとめてもいいかも
             {
                 //obsのレンジが武器の射程に入ったときにランク分けしてtargetenemyに入れる
                 //if(soldierrange > obsの距離){ランクの高い敵をtargetenemyに入れる }
@@ -408,5 +625,5 @@ public abstract class AttackController : MonoBehaviour
 
 
 
-
+    
 }
