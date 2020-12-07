@@ -360,10 +360,10 @@ public class ButtonManager : MonoBehaviour
         weaponName = "Mk3";
 
         givenAttackPower = 35;
-        givenSoldierRange = 3f;
+        givenSoldierRange = 5f;
         givenClip = 10;
-        givenMinSpan = 1.5f;
-        givenMaxSpan = 1.5f;
+        givenMinSpan = 2.5f;
+        givenMaxSpan = 4.5f;
         givenAudioClipName = "Mk3SE";
         givenShootEndRag = 1.4f;
     }
@@ -382,10 +382,10 @@ public class ButtonManager : MonoBehaviour
         weaponName = "P14";
 
         givenAttackPower = 50;
-        givenSoldierRange = 4f;
+        givenSoldierRange = 5.5f;
         givenClip = 5;
-        givenMinSpan = 2f;
-        givenMaxSpan = 2f;
+        givenMinSpan = 3f;
+        givenMaxSpan = 5.5f;
         givenAudioClipName = "P14SE";
         givenShootEndRag = 1.9f;
 
@@ -462,10 +462,10 @@ public class ButtonManager : MonoBehaviour
         weaponName = "Mk3Marksman";
 
         givenAttackPower = 45;
-        givenSoldierRange = 4.5f;
+        givenSoldierRange = 6f;
         givenClip = 10;
-        givenMinSpan = 1.5f;
-        givenMaxSpan = 1.5f;
+        givenMinSpan = 2.5f;
+        givenMaxSpan = 4.5f;
         givenAudioClipName = "Mk3SE";
         givenShootEndRag = 1.4f;
     }

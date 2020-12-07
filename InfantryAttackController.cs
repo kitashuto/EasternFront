@@ -40,7 +40,7 @@ public class InfantryAttackController : AttackController
             else if (infantryAnimation.course == "Mk3Marksman" || infantryAnimation.course == "P14Marksman")
             {
                 SniperAttackMethod();
-                ReloadMethod();
+                SniperReloadMethod();
             }
 
         }
@@ -57,6 +57,7 @@ public class InfantryAttackController : AttackController
                 lookDelta = 0f;
                 shootDelta = 0f;
                 upMotion = true;
+                lieDownMotion = true;
                 nearEnemy = null;
             
             if (time > 0.01f)
@@ -69,6 +70,9 @@ public class InfantryAttackController : AttackController
             }
         }
         WeaponSoundController();
+
+        allAmmo = remainingAmmo + magazine;
+        Debug.Log("残弾数" + allAmmo);
     }
 
 

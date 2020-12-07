@@ -9,7 +9,9 @@ public class Move : MonoBehaviour
     bool moveTorF;
     bool shootEndFlag;
     public bool shootToMove;
+    public bool standUpToIdle;
     public float shootEndTime;
+    public float standUpTime;
     Vector3 pos1;
     Quaternion rotation;
 
@@ -44,9 +46,13 @@ public class Move : MonoBehaviour
         targetPos = pos;
         rotation = Quaternion.LookRotation(Vector3.forward, Input.mousePosition - pos1);
 
-        if (infantryAttackController.shootEnd == false)
+        if (infantryAttackController.shootEnd == false && infantryAttackController.attackMethodName == "AttackMethod")
         {
             MoveMotion();
+        }
+        if (infantryAttackController.shootEnd == false &&infantryAttackController.attackMethodName == "SniperAttackMethod" && infantryAttackController.lieDownMotion == false)
+        {
+            StandUpToIdle();
         }
         
                     
@@ -57,8 +63,27 @@ public class Move : MonoBehaviour
         animator.SetTrigger("MoveTrigger");
         infantryAttackController.lookDelta = 0f;
         infantryAttackController.shootDelta = 0f;
-        infantryAttackController.upMotion = true;        
+        infantryAttackController.upMotion = true;
+        infantryAttackController.lieDownMotion = true;
+        infantryAttackController.outOfRange = false;//これがないと射程外に自分から移動して出て行った後に一瞬gunUpMotionが出て銃を上げた後idleになる
         transform.localRotation = rotation;
+    }
+
+    public void StandUpToIdle()
+    {        
+        standUpTime += Time.deltaTime;
+        if (standUpToIdle == true && CurrentState == State.Move)
+        {
+            animator.SetTrigger("SatndUpTrigger");
+            standUpToIdle = false;
+        }
+
+        if(standUpTime > 1.3f)
+        {
+            MoveMotion();
+            standUpTime = 0;
+        }            
+        
     }
 
     void Start() 
@@ -78,7 +103,7 @@ public class Move : MonoBehaviour
 
         //speedは下限1.5上限3
 
-        if (CurrentState == State.Move && soldierHP.HP >= 1 && infantryAttackController.shootEnd == false)
+        if (CurrentState == State.Move && soldierHP.HP >= 1 && infantryAttackController.shootEnd == false && standUpTime == 0)
         {
             transform.position = Vector2.MoveTowards(transform.position, targetPos, speed * Time.deltaTime);            
 

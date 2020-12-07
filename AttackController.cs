@@ -23,6 +23,8 @@ public abstract class AttackController : MonoBehaviour
     public GameObject nearEnemy;         //最も近いオブジェクト
     public float searchTime;    //経過時間
     public bool upMotion;
+    public bool lieDownMotion;
+    public bool standUpMotion;
     public bool shootToDown;
     public bool downMotion;
     public bool reloadMotion;
@@ -66,7 +68,7 @@ public abstract class AttackController : MonoBehaviour
     public float idleTimer;
     public Move move;
     public InfantryAnimation infantryAnimation;
-
+    public string attackMethodName;
 
 
     //攻撃の命中精度などに使う百分率
@@ -100,22 +102,22 @@ public abstract class AttackController : MonoBehaviour
 
         //初期値(Mk3)
         attackPower = 35;
-        hitRate = 50;
-        soldierRange = 3f;
+        hitRate = 25;
+        soldierRange = 5f;
         rifleSE = mk3SE;
         shootEndRag = 1.4f;
         reloadSpan = 4.8f;
 
-        minSpan = 1.5f;
-        maxSpan = 2f;
+        minSpan = 2.5f;
+        maxSpan = 4.5f;
 
         remainingAmmo = 100;
         magazine = 10;
         clip = 10;
 
-        lookSpan = 0.5f;
-        holdSpan = 1.25f;
-        lieDownSpan = 2.3f;
+        lookSpan = 0.3f;
+        holdSpan = 0.75f;
+        lieDownSpan = 2.5f;
     }
 
 
@@ -142,23 +144,12 @@ public abstract class AttackController : MonoBehaviour
 
     public void AttackMethod()
     {
+        attackMethodName = "AttackMethod";
         if (soldierHP.HP < 1) return;
 
         //ここからセミオート攻撃モーション(State.Move以外)]
 
-        searchTime += Time.deltaTime;
-
-        if (searchTime >= 0.5f)
-        {
-            string[] tagNameArray = { "Enemy", "EnemyOfficer" };
-
-            //最も近かったオブジェクトを取得
-            nearEnemy = searchTag(gameObject, tagNameArray);
-
-            //経過時間を初期化
-            searchTime = 0;
-
-        }
+        SearchTimeMethod();
 
         //射撃時の行動
         if (nearEnemy != null)
@@ -254,8 +245,7 @@ public abstract class AttackController : MonoBehaviour
             lookDelta = 0;
             shootDelta = 0;
         }
-        allAmmo = remainingAmmo + magazine;
-        Debug.Log("残弾数" + allAmmo);
+        
 
         //射撃後のラグを測る
         if (shootEnd == true)
@@ -282,23 +272,12 @@ public abstract class AttackController : MonoBehaviour
     //狙撃手用攻撃メソッド
     public void SniperAttackMethod()
     {
+        attackMethodName = "SniperAttackMethod";
         if (soldierHP.HP < 1) return;
 
         //ここからセミオート攻撃モーション(State.Move以外)]
 
-        searchTime += Time.deltaTime;
-
-        if (searchTime >= 0.5f)
-        {
-            string[] tagNameArray = { "Enemy", "EnemyOfficer" };
-
-            //最も近かったオブジェクトを取得
-            nearEnemy = searchTag(gameObject, tagNameArray);
-
-            //経過時間を初期化
-            searchTime = 0;
-
-        }
+        SearchTimeMethod();
 
         //射撃時の行動
         if (nearEnemy != null)
@@ -312,7 +291,7 @@ public abstract class AttackController : MonoBehaviour
             AccuracyBonus();
 
             //敵がレンジ内の時
-            if (soldierRange * 1/2 < shootRange && shootRange <= soldierRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0)//!=の後はsoldierMoveではなく元となるSoldierMoveを指定
+            if (soldierRange * 2/3 < shootRange && shootRange <= soldierRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0)//!=の後はsoldierMoveではなく元となるSoldierMoveを指定
             {
 
                 this.lookDelta += Time.deltaTime;//Unityの教科書p212,スクリプト13行目
@@ -323,14 +302,14 @@ public abstract class AttackController : MonoBehaviour
                     {
                         this.transform.rotation = Quaternion.FromToRotation(Vector3.up, vec1);
                     }
-                    if (lookDelta > holdSpan && upMotion == true)
+                    if (lookDelta > lookSpan && lieDownMotion == true)
                     {
                         animator.SetTrigger("LieDownTrigger");
-                        upMotion = false;
+                        lieDownMotion = false;
                         shootSpan += 1f;
                     }
 
-                    if (lookDelta > holdSpan)
+                    if (lookDelta > lieDownSpan)
                     {
 
 
@@ -360,11 +339,11 @@ public abstract class AttackController : MonoBehaviour
                 }
                 if (outOfRange == false)
                 {
-                    upMotion = true;
+                    lieDownMotion = true;
                     outOfRange = true;
                 }
             }
-            if (soldierRange * 1 / 2 >= shootRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0)//!=の後はsoldierMoveではなく元となるSoldierMoveを指定
+            if (soldierRange * 2/3 >= shootRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0)//!=の後はsoldierMoveではなく元となるSoldierMoveを指定
             {
 
                 this.lookDelta += Time.deltaTime;//Unityの教科書p212,スクリプト13行目
@@ -375,13 +354,13 @@ public abstract class AttackController : MonoBehaviour
                     {
                         this.transform.rotation = Quaternion.FromToRotation(Vector3.up, vec1);
                     }
-                    if (lookDelta > lieDownSpan && upMotion == true)
+                    if (lookDelta > holdSpan && upMotion == true)
                     {
                         animator.SetTrigger("UpTrigger");
                         upMotion = false;
                     }
 
-                    if (lookDelta > lieDownSpan)
+                    if (lookDelta > holdSpan)
                     {
 
 
@@ -409,11 +388,7 @@ public abstract class AttackController : MonoBehaviour
                         }
                     }
                 }
-                if (outOfRange == false)
-                {
-                    upMotion = true;
-                    outOfRange = true;
-                }
+                
             }
 
             //敵がレンジ外の時
@@ -423,12 +398,12 @@ public abstract class AttackController : MonoBehaviour
                 {
                     if (shootToDown == false)
                     {
-                        downMotion = true;
-                        DownToIdleMotion();
+                        standUpMotion = true;
+                        StandUpMotion();
                     }
                     else if (shootToDown == true)
                     {
-                        DownToIdleMotion();
+                        StandUpMotion();
                         shootToDown = false;
                     }
                     outOfRange = false;
@@ -439,15 +414,14 @@ public abstract class AttackController : MonoBehaviour
             }
         }
 
-        else if (nearEnemy == null && downMotion == true)
+        else if (nearEnemy == null && (downMotion == true || standUpMotion == true))
         {
-            DownToIdleMotion();
+            StandUpMotion();
             downMotion = false;
+            standUpMotion = false;
             lookDelta = 0;
             shootDelta = 0;
-        }
-        allAmmo = remainingAmmo + magazine;
-        Debug.Log("残弾数" + allAmmo);
+        }        
 
         //射撃後のラグを測る
         if (shootEnd == true)
@@ -457,6 +431,7 @@ public abstract class AttackController : MonoBehaviour
             {
                 magazine--;
                 downMotion = true;
+                standUpMotion = true;
                 shootEndDelta = 0;
                 shootEnd = false;
                 shootToDown = true;
@@ -465,6 +440,70 @@ public abstract class AttackController : MonoBehaviour
             }
         }
 
+    }
+
+
+
+
+    public void SniperReloadMethod()
+    {
+        if (soldierHP.HP < 1) return;
+
+
+        //リロード時の行動
+        if (magazine == 0 && remainingAmmo >= 1)
+        {
+            if (soldierMove.CurrentState != Move.State.Move)
+            {
+                reloadDelta += Time.deltaTime;
+                if (soldierRange * 2 / 3 < shootRange && shootRange <= soldierRange)
+                {
+                    if (reloadDelta > 0.3f && reloadMotion == true)
+                    {
+                        animator.SetTrigger("ProneReloadTrigger");
+                        reloadMotion = false;
+                    }
+                    if (reloadDelta > reloadSpan)
+                    {
+                        lookDelta = 0f;
+                        shootDelta = 0f;
+                        magazine += clip;
+                        remainingAmmo -= clip;
+                        reloadDelta = 0;
+                    }
+                }
+                else if (soldierRange * 2 / 3 >= shootRange)
+                {
+                    if (downMotion == true)
+                    {
+                        animator.SetTrigger("DownTrigger");
+                        reloadMotion = true;
+                        downMotion = false;
+                    }
+                    if (reloadDelta > 0.3f && reloadMotion == true)
+                    {
+                        animator.SetTrigger("ReloadTrigger");
+                        reloadMotion = false;
+                    }
+                    if (reloadDelta > reloadSpan)
+                    {
+                        animator.SetTrigger("IdleTrigger");
+                        upMotion = true;
+                        lookDelta = 0f;
+                        shootDelta = 0f;
+                        magazine += clip;
+                        remainingAmmo -= clip;
+                        reloadDelta = 0;
+                    }
+                }
+                
+            }
+            else
+            {
+                reloadDelta = 0;
+            }
+
+        }
     }
 
 
@@ -488,6 +527,23 @@ public abstract class AttackController : MonoBehaviour
         }
     }
 
+    public void StandUpMotion()
+    {
+        if (standUpMotion == true)
+        {
+            animator.SetTrigger("StandUpTrigger");
+            idleMotion = true;
+            standUpMotion = false;
+        }
+
+        idleTimer += Time.deltaTime;
+
+        if (idleTimer > 1.3f && idleMotion == true)
+        {
+            animator.SetTrigger("IdleTrigger");
+            idleMotion = false;
+        }
+    }
 
 
 
@@ -533,6 +589,11 @@ public abstract class AttackController : MonoBehaviour
         }
     }
 
+
+
+
+
+    
 
 
 
@@ -622,8 +683,20 @@ public abstract class AttackController : MonoBehaviour
         }
     }
 
+    public void SearchTimeMethod()
+    {
+        searchTime += Time.deltaTime;
 
+        if (searchTime >= 0.5f)
+        {
+            string[] tagNameArray = { "Enemy", "EnemyOfficer" };
 
+            //最も近かったオブジェクトを取得
+            nearEnemy = searchTag(gameObject, tagNameArray);
 
-    
+            //経過時間を初期化
+            searchTime = 0;
+
+        }
+    }   
 }
