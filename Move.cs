@@ -5,9 +5,8 @@ using UnityEngine;
 public class Move : MonoBehaviour
 {
 
-    bool moveGo;
-    bool moveTorF;
-    bool shootEndFlag;
+    
+    public bool shootEndFlag;
     public bool shootToMove;
     public bool standUpToIdle;
     public float shootEndTime;
@@ -27,6 +26,17 @@ public class Move : MonoBehaviour
     Vector2 targetPos;
 
 
+
+    void Start()
+    {
+        soldierHP = gameObject.GetComponent<SoldierHP>();
+        infantryAttackController = gameObject.GetComponent<InfantryAttackController>();
+        animator = this.GetComponent<Animator>();
+        speed = 2f;
+        shootToMove = true;
+    }
+
+
     public void Forcus()
     {
         CurrentState = State.Ready;
@@ -40,17 +50,19 @@ public class Move : MonoBehaviour
 
     public void MoveTo(Vector2 pos)
     {
-        if (soldierHP.HP < 1) return;                
-        CurrentState = State.Move;
+        if (soldierHP.hp < 1) return;
+
+        shootEndFlag = true;
         pos1 = Camera.main.WorldToScreenPoint(transform.localPosition);
         targetPos = pos;
         rotation = Quaternion.LookRotation(Vector3.forward, Input.mousePosition - pos1);
 
-        if (infantryAttackController.shootEnd == false && infantryAttackController.attackMethodName == "AttackMethod")
+        if (shootToMove == true && infantryAttackController.attackMethodName == "AttackMethod")
         {
+            CurrentState = State.Move;
             MoveMotion();
         }
-        if (infantryAttackController.shootEnd == false &&infantryAttackController.attackMethodName == "SniperAttackMethod" && infantryAttackController.lieDownMotion == false)
+        if (infantryAttackController.attackMethodName == "SniperAttackMethod" && infantryAttackController.lieDownMotion == false)
         {
             StandUpToIdle();
         }
@@ -60,10 +72,11 @@ public class Move : MonoBehaviour
 
     public void MoveMotion()
     {
+        
         animator.SetTrigger("MoveTrigger");
         infantryAttackController.lookDelta = 0f;
         infantryAttackController.shootDelta = 0f;
-        infantryAttackController.upMotion = true;
+        infantryAttackController.upMotion = true;        
         infantryAttackController.lieDownMotion = true;
         infantryAttackController.outOfRange = false;//これがないと射程外に自分から移動して出て行った後に一瞬gunUpMotionが出て銃を上げた後idleになる
         transform.localRotation = rotation;
@@ -86,24 +99,17 @@ public class Move : MonoBehaviour
         
     }
 
-    void Start() 
-    {
-        soldierHP = gameObject.GetComponent<SoldierHP>();
-        infantryAttackController = gameObject.GetComponent<InfantryAttackController>();
-        animator = this.GetComponent<Animator>();
-
-        speed = 1.5f;
-    }
+    
 
     void Update()
     {
-       
 
+        Debug.Log(CurrentState);
         speedCycle = speed;
 
         //speedは下限1.5上限3
 
-        if (CurrentState == State.Move && soldierHP.HP >= 1 && infantryAttackController.shootEnd == false && standUpTime == 0)
+        if (CurrentState == State.Move && soldierHP.hp >= 1 && shootToMove == true && standUpTime == 0)
         {
             transform.position = Vector2.MoveTowards(transform.position, targetPos, speed * Time.deltaTime);            
 
@@ -111,6 +117,7 @@ public class Move : MonoBehaviour
             if (System.Math.Abs(distance) < 0.01f)
             {
                 CurrentState = State.Idle;
+                shootEndFlag = false;
                 //attackController.lookDelta = 0;//Attackメソッドの繰り返しタイミングはここ。         
 
                 if (infantryAttackController.magazine != 0)
@@ -123,24 +130,24 @@ public class Move : MonoBehaviour
                 }
             }
 
-            if (speedCycle > 2.6f)
+            if (speedCycle > 2.8f)
             {
-                speedCycle = 2.6f;
+                speedCycle = 2.8f;
             }
-            else if (speedCycle < 1.75f)
+            else if (speedCycle < 2.2f)
             {
-                speedCycle = 1.75f;
+                speedCycle = 2.2f;
             }
-            animator.SetFloat("Speed", speedCycle * 1.1f); 
+            animator.SetFloat("Speed", speedCycle * 0.9f); 
         }
 
 
 
         //p45(shoot == true)だったときの分岐処理。InfantryAttackControllerの射撃ラグを測る処理内にshootToMoveをtrueにするトリガーを設置。このことによりコッキングが終わった後に移動アニメーションが作動する。
-        if(shootToMove == true && CurrentState == State.Move)
-        {            
+        if(CurrentState == State.Ready && shootEndFlag == true && shootToMove == true)
+        {
+            CurrentState = State.Move;
             MoveMotion();
-            shootToMove = false;
         }
                 
     }

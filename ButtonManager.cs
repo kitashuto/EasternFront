@@ -20,7 +20,6 @@ public class ButtonManager : MonoBehaviour
     public float givenMaxSpan;
     public string weaponName;
     public string givenAudioClipName;
-    public float givenShootEndRag;
 
     public string compareTagName;
 
@@ -185,7 +184,6 @@ public class ButtonManager : MonoBehaviour
                         s.minSpan = givenMinSpan;
                         s.maxSpan = givenMaxSpan;
                         s.audioClipName = givenAudioClipName;
-                        s.shootEndRag = givenShootEndRag;
 
                         s.attackOrder = false;
 
@@ -365,7 +363,6 @@ public class ButtonManager : MonoBehaviour
         givenMinSpan = 2.5f;
         givenMaxSpan = 4.5f;
         givenAudioClipName = "Mk3SE";
-        givenShootEndRag = 1.4f;
     }
 
 
@@ -387,7 +384,6 @@ public class ButtonManager : MonoBehaviour
         givenMinSpan = 3f;
         givenMaxSpan = 5.5f;
         givenAudioClipName = "P14SE";
-        givenShootEndRag = 1.9f;
 
     }
 
@@ -467,7 +463,6 @@ public class ButtonManager : MonoBehaviour
         givenMinSpan = 2.5f;
         givenMaxSpan = 4.5f;
         givenAudioClipName = "Mk3SE";
-        givenShootEndRag = 1.4f;
     }
 
 

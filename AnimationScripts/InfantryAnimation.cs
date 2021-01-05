@@ -29,7 +29,7 @@ public class InfantryAnimation : MonoBehaviour
         }
         else if (course == "P14" )
         {
-
+            
             animator.runtimeAnimatorController = controller[1];            
             
         }
@@ -57,6 +57,6 @@ public class InfantryAnimation : MonoBehaviour
             animator.runtimeAnimatorController = controller[5];
 
         }
-        Debug.Log(course);
+        
     }
 }

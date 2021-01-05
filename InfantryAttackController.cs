@@ -25,6 +25,7 @@ public class InfantryAttackController : AttackController
         DefaultState();
         shootSpan = GetRandomTime();
         nearEnemy = null;
+        shoot = true;
     }
 
     // Update is called once per frame
@@ -72,7 +73,7 @@ public class InfantryAttackController : AttackController
         WeaponSoundController();
 
         allAmmo = remainingAmmo + magazine;
-        Debug.Log("残弾数" + allAmmo);
+        //Debug.Log("残弾数" + allAmmo);
     }
 
 

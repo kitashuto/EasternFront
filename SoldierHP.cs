@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class SoldierHP : MonoBehaviour, IDamagable
 {
-    public int HP = 100;//publicでインスペクターに表示させたくない。方法を見つけること。
+    public int hp = 100;//publicでインスペクターに表示させたくない。方法を見つけること。
 
     float destroyDelta;
     bool t = false;
@@ -12,9 +12,9 @@ public class SoldierHP : MonoBehaviour, IDamagable
 
     public void AddDamage(int damage)
     {
-        HP -= damage;
+        hp -= damage;
 
-        if (HP <= 0)
+        if (hp <= 0)
         {
             this.animator.SetTrigger("DeadTrigger");
             Debug.Log("Soldierが倒された");
@@ -30,7 +30,7 @@ public class SoldierHP : MonoBehaviour, IDamagable
     // Update is called once per frame
     void Update()
     {
-        Debug.Log(HP);
+        Debug.Log(hp);
         if (t == true)
         {
             destroyDelta += Time.deltaTime;

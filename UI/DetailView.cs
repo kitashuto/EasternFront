@@ -5,6 +5,9 @@ using UnityEngine;
 public class DetailView : MonoBehaviour
 {
     public string[] tagNameArray = { "Infantry", "Officer" ,"Sniper" , "Marksman"};
+    public UIManager ui;
+    public int soldierHp;
+    
     // Start is called before the first frame update
     void Start()
     {
@@ -24,13 +27,17 @@ public class DetailView : MonoBehaviour
                 if (s != null && Input.GetKey(KeyCode.C)) //Iキーが押されていれば
                 {
                     s.rangeSwitching = true;
-                    Debug.Log("表示");
+                    //Debug.Log("表示");
                 }
                 else
                 {
                     s.rangeSwitching = false;
-                    Debug.Log("非表示");
+                    //Debug.Log("非表示");
                 }
+
+                var hpScript = hit2d.collider.gameObject.GetComponent<SoldierHP>();
+                soldierHp = hpScript.hp;
+                ui.UpdateHP(soldierHp);
             }
         }
     }
