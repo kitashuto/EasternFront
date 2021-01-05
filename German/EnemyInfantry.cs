@@ -60,6 +60,7 @@ public class EnemyInfantry : MonoBehaviour
 
     public bool outOfRange;
     public bool idleMotion = false;
+    public bool isShooting;
     public float idleTimer;
     public Move move;
     public InfantryAnimation infantryAnimation;
@@ -81,6 +82,7 @@ public class EnemyInfantry : MonoBehaviour
         aud = GetComponent<AudioSource>();
         targetPos = new Vector2(1.3f, -5.5f);
         moveAnim = true;
+        isShooting = false;
         speed = 1.25f;
     }
 
@@ -186,10 +188,11 @@ public class EnemyInfantry : MonoBehaviour
                 if (lookDelta > lookSpan && magazine >= 1)
                 {
                     var vec1 = (p2 - p1).normalized;
-                    if (shootEnd == false)
-                    {
-                        this.transform.rotation = Quaternion.FromToRotation(Vector3.up, vec1);
-                    }
+                    //this.transform.rotation = Quaternion.FromToRotation(Vector3.up, vec1);
+                    Quaternion rotation = Quaternion.FromToRotation(Vector3.up, vec1);
+                    // 現在の回転情報と、ターゲット方向の回転情報を補完する
+                    transform.rotation = Quaternion.Slerp(this.transform.rotation, rotation, 0.1f);
+
                     if (lookDelta > holdSpan && upMotion == true)
                     {
                         shootSpan = 1.25f;
@@ -199,14 +202,13 @@ public class EnemyInfantry : MonoBehaviour
 
                     if (lookDelta > holdSpan)
                     {
-
                         shootDelta += Time.deltaTime;
 
-                        if (shootDelta > shootSpan)
-                        {//発砲モーション付ける                                                                                           
+                        if (shootDelta > shootSpan && isShooting == false)
+                        {//発砲モーション付ける      
                             animator.SetTrigger("FireTrigger");//このアニメが終わるまではmoveできないようにしたい
                             aud.PlayOneShot(g98SE);
-
+                            magazine--;
                             if (probability < hitRate)
                             {
                                 nearEnemy.GetComponent<IDamagable>().AddDamage(attackPower);
@@ -215,12 +217,22 @@ public class EnemyInfantry : MonoBehaviour
                             //attackPower = 30;
                             probability = Probability();
                             shootSpan = GetRandomTime();
-                            //move.shootToMove = false;//ここにいれないと2発目以降MoveのMoveMotion(2)の処理がうまくいかない
-
-                            shootDelta = 0f;
-                            shootEnd = true;
+                            isShooting = true;//ここにいれないと2発目以降MoveのMoveMotion(2)の処理がうまくいかない
 
                         }
+                        else if (shootDelta > shootSpan)
+                        {
+
+                            shootDelta = 0f;
+                        }
+                        else if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
+                        {
+                            isShooting = false;
+                            downMotion = true;
+                            shootToDown = true;
+                            //moveGoサイン。reloadGoサイン。の処理。
+                        }
+
                     }
                 }
                 if (outOfRange == false)
@@ -248,6 +260,7 @@ public class EnemyInfantry : MonoBehaviour
                         DownToIdleMotion();
                         shootToDown = false;
                     }
+                    isShooting = false;
                     outOfRange = false;
                 }
 
@@ -260,6 +273,7 @@ public class EnemyInfantry : MonoBehaviour
         {
             DownToIdleMotion();
             downMotion = false;
+            isShooting = false;
             lookDelta = 0;
             shootDelta = 0;
         }
@@ -361,7 +375,7 @@ public class EnemyInfantry : MonoBehaviour
 
             //オブジェクトの距離が近いか、距離0であればオブジェクト名を取得
             //一時変数に距離を格納
-            if (soldierHPScript.hp >= 1)//下のifとまとめてもいいかも
+            if (soldierHPScript.hp >= 1 || (isShooting == true && soldierHPScript.hp < 1 && soldierHPScript.dead == true))//下のifとまとめてもいいかも
             {
                 //obsのレンジが武器の射程に入ったときにランク分けしてtargetenemyに入れる
                 //if(soldierrange > obsの距離){ランクの高い敵をtargetenemyに入れる }
@@ -370,6 +384,10 @@ public class EnemyInfantry : MonoBehaviour
                     nearDis = tmpDis;
                     //nearObjName = obs.name;
                     targetEnemy = obs;
+                }
+                else if (isShooting == false && soldierHPScript.hp < 1)//これがないと敵が死んだ後にisShooting == trueが来る毎に死体撃ちを続けてしまう
+                {
+                    soldierHPScript.dead = false;
                 }
             }
         }

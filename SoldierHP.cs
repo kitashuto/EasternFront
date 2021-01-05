@@ -7,7 +7,8 @@ public class SoldierHP : MonoBehaviour, IDamagable
     public int hp = 100;//publicでインスペクターに表示させたくない。方法を見つけること。
 
     float destroyDelta;
-    bool t = false;
+    bool deadTrigger = false;
+    public bool dead;
     Animator animator;
 
     public void AddDamage(int damage)
@@ -16,9 +17,10 @@ public class SoldierHP : MonoBehaviour, IDamagable
 
         if (hp <= 0)
         {
+            dead = true;
             this.animator.SetTrigger("DeadTrigger");
             Debug.Log("Soldierが倒された");
-            t = true;
+            deadTrigger = true;
         }
     }
     // Start is called before the first frame update
@@ -31,7 +33,7 @@ public class SoldierHP : MonoBehaviour, IDamagable
     void Update()
     {
         Debug.Log(hp);
-        if (t == true)
+        if (deadTrigger == true)
         {
             destroyDelta += Time.deltaTime;
             if (destroyDelta > 10f)

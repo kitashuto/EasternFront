@@ -25,7 +25,7 @@ public class InfantryAttackController : AttackController
         DefaultState();
         shootSpan = GetRandomTime();
         nearEnemy = null;
-        shoot = true;
+        isShooting = false;
     }
 
     // Update is called once per frame

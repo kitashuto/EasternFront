@@ -62,7 +62,7 @@ public abstract class AttackController : MonoBehaviour
     public bool attackOrder;
     public bool outOfRange;
     public bool idleMotion = false;
-    public bool shoot;
+    public bool isShooting;
     public float idleTimer;
     public Move move;
     public InfantryAnimation infantryAnimation;
@@ -100,7 +100,7 @@ public abstract class AttackController : MonoBehaviour
 
         //初期値(Mk3)
         attackPower = 35;
-        hitRate = 25;
+        hitRate = 85;
         soldierRange = 5f;
         rifleSE = mk3SE;
         reloadSpan = 4.8f;
@@ -168,10 +168,10 @@ public abstract class AttackController : MonoBehaviour
                 {
                     var vec1 = (p2 - p1).normalized;
                     
-                        //this.transform.rotation = Quaternion.FromToRotation(Vector3.up, vec1);
-                        Quaternion rotation = Quaternion.FromToRotation(Vector3.up, vec1);
-                        // 現在の回転情報と、ターゲット方向の回転情報を補完する
-                        transform.rotation = Quaternion.Slerp(this.transform.rotation, rotation, 0.1f);
+                    //this.transform.rotation = Quaternion.FromToRotation(Vector3.up, vec1);
+                    Quaternion rotation = Quaternion.FromToRotation(Vector3.up, vec1);
+                    // 現在の回転情報と、ターゲット方向の回転情報を補完する
+                    transform.rotation = Quaternion.Slerp(this.transform.rotation, rotation, 0.1f);
                     
                     if (lookDelta > holdSpan && upMotion == true)
                     {
@@ -182,16 +182,13 @@ public abstract class AttackController : MonoBehaviour
 
                     if (lookDelta > holdSpan)
                     {
-
-
-                        //animator.SetTrigger("ReadyTrigger");//moveすることによってこのアニメを終わらせたい
                         shootDelta += Time.deltaTime;
 
-                        if (shootDelta > shootSpan && shoot == true)
+                        if (shootDelta > shootSpan && isShooting == false)
                         {//発砲モーション付ける      
                             animator.SetTrigger("FireTrigger");//このアニメが終わるまではmoveできないようにしたい
                             aud.PlayOneShot(this.rifleSE);
-
+                            magazine--;
                             if (probability < hitRate)
                             {
                                 nearEnemy.GetComponent<IDamagable>().AddDamage(attackPower);
@@ -200,24 +197,22 @@ public abstract class AttackController : MonoBehaviour
                             //attackPower = 30;
                             probability = Probability();
                             shootSpan = GetRandomTime();
-                            move.shootToMove = false;//ここにいれないと2発目以降MoveのMoveMotion(2)の処理がうまくいかない
-                            shoot = false;
+                            isShooting = true;//ここにいれないと2発目以降MoveのMoveMotion(2)の処理がうまくいかない
                             
                         }
                         else if (shootDelta > shootSpan)
                         {
-                            if (this.animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
-                            {
-                                shootDelta = 0f;
-                                shoot = true;
-                                Debug.Log("aaaaaaaaaaaaaaaaaaaaaaaa");
-                                magazine--;
-                                downMotion = true;
-                                shootToDown = true;
-                                move.shootToMove = true;
-                                //moveGoサイン。reloadGoサイン。の処理。
-                            }
+                            
+                            shootDelta = 0f;
                         }
+                        else if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
+                        {
+                            isShooting = false;
+                            downMotion = true;
+                            shootToDown = true;
+                            //moveGoサイン。reloadGoサイン。の処理。
+                        }
+
                     }
                 }
                 if (outOfRange == false)
@@ -242,6 +237,7 @@ public abstract class AttackController : MonoBehaviour
                         DownToIdleMotion();
                         shootToDown = false;
                     }
+                    isShooting = false;
                     outOfRange = false;
                 }
                 
@@ -254,6 +250,7 @@ public abstract class AttackController : MonoBehaviour
         {            
             DownToIdleMotion();
             downMotion = false;
+            isShooting = false;
             lookDelta = 0;
             shootDelta = 0;
         }
@@ -325,7 +322,6 @@ public abstract class AttackController : MonoBehaviour
                             //attackPower = 30;
                             probability = Probability();
                             shootSpan = GetRandomTime();
-                            move.shootToMove = false;//ここにいれないと2発目以降MoveのMoveMotion(2)の処理がうまくいかない
 
                             if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
                             {
@@ -334,7 +330,6 @@ public abstract class AttackController : MonoBehaviour
                                 magazine--;
                                 downMotion = true;
                                 shootToDown = true;
-                                move.shootToMove = true;
                                 //moveGoサイン。reloadGoサイン。の処理。
                             }
 
@@ -384,7 +379,6 @@ public abstract class AttackController : MonoBehaviour
                             //attackPower = 30;
                             probability = Probability();
                             shootSpan = GetRandomTime();
-                            move.shootToMove = false;//ここにいれないと2発目以降MoveのMoveMotion(2)の処理がうまくいかない
 
                             if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
                             {
@@ -393,7 +387,6 @@ public abstract class AttackController : MonoBehaviour
                                 magazine--;
                                 downMotion = true;
                                 shootToDown = true;
-                                move.shootToMove = true;
                                 //moveGoサイン。reloadGoサイン。の処理。
                             }
 
@@ -620,7 +613,7 @@ public abstract class AttackController : MonoBehaviour
 
             //オブジェクトの距離が近いか、距離0であればオブジェクト名を取得
             //一時変数に距離を格納
-            if (enemyHPScript.hp >= 1)//下のifとまとめてもいいかも
+            if (enemyHPScript.hp >= 1 || (isShooting == true && enemyHPScript.hp < 1 && enemyHPScript.dead == true))//下のifとまとめてもいいかも
             {
                 //obsのレンジが武器の射程に入ったときにランク分けしてtargetenemyに入れる
                 //if(soldierrange > obsの距離){ランクの高い敵をtargetenemyに入れる }
@@ -630,6 +623,10 @@ public abstract class AttackController : MonoBehaviour
                     //nearObjName = obs.name;
                     targetEnemy = obs;
                 }
+            }
+            else if(isShooting == false && enemyHPScript.hp < 1)//これがないと敵が死んだ後にisShooting == trueが来る毎に死体撃ちを続けてしまう
+            {
+                enemyHPScript.dead = false;
             }
         }
 

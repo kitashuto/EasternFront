@@ -7,7 +7,6 @@ public class Move : MonoBehaviour
 
     
     public bool shootEndFlag;
-    public bool shootToMove;
     public bool standUpToIdle;
     public float shootEndTime;
     public float standUpTime;
@@ -33,7 +32,6 @@ public class Move : MonoBehaviour
         infantryAttackController = gameObject.GetComponent<InfantryAttackController>();
         animator = this.GetComponent<Animator>();
         speed = 2f;
-        shootToMove = true;
     }
 
 
@@ -57,7 +55,7 @@ public class Move : MonoBehaviour
         targetPos = pos;
         rotation = Quaternion.LookRotation(Vector3.forward, Input.mousePosition - pos1);
 
-        if (shootToMove == true && infantryAttackController.attackMethodName == "AttackMethod")
+        if (infantryAttackController.isShooting == false && infantryAttackController.attackMethodName == "AttackMethod")
         {
             CurrentState = State.Move;
             MoveMotion();
@@ -109,7 +107,7 @@ public class Move : MonoBehaviour
 
         //speedは下限1.5上限3
 
-        if (CurrentState == State.Move && soldierHP.hp >= 1 && shootToMove == true && standUpTime == 0)
+        if (CurrentState == State.Move && soldierHP.hp >= 1 && infantryAttackController.isShooting == false && standUpTime == 0)
         {
             transform.position = Vector2.MoveTowards(transform.position, targetPos, speed * Time.deltaTime);            
 
@@ -144,7 +142,7 @@ public class Move : MonoBehaviour
 
 
         //p45(shoot == true)だったときの分岐処理。InfantryAttackControllerの射撃ラグを測る処理内にshootToMoveをtrueにするトリガーを設置。このことによりコッキングが終わった後に移動アニメーションが作動する。
-        if(CurrentState == State.Ready && shootEndFlag == true && shootToMove == true)
+        if(CurrentState == State.Ready && shootEndFlag == true && infantryAttackController.isShooting == false)
         {
             CurrentState = State.Move;
             MoveMotion();
