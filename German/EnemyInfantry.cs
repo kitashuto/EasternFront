@@ -20,8 +20,6 @@ public class EnemyInfantry : MonoBehaviour
     public float searchTime;    //経過時間
     public bool upMotion;
     public bool lieDownMotion;
-    public bool standUpMotion;
-    public bool shootToDown;
     public bool downMotion;
     public bool reloadMotion;
 
@@ -41,15 +39,11 @@ public class EnemyInfantry : MonoBehaviour
 
     public float reloadSpan;
     public float reloadDelta;
-    public bool shootEnd;
-    public float shootEndDelta;
-    public float shootEndRag;
 
 
     public float lookSpan;//15～16行目はUnityの教科書p212のししおどしの時間差計算の引用
     public float holdSpan;
-    public float lieDownSpan;
-    public float lookDelta;//SoldierMoveで使うためpublic
+    public float lookDelta;
     public float shootSpan;
     public float shootDelta;//初期値を-5にしないと敵を向いた瞬間攻撃してしまう。だから5(shootSpan)秒巻き戻してからスタートさせる。
     public float minSpan;
@@ -62,11 +56,9 @@ public class EnemyInfantry : MonoBehaviour
     public bool idleMotion = false;
     public bool isShooting;
     public float idleTimer;
-    public Move move;
-    public InfantryAnimation infantryAnimation;
-    public string attackMethodName;
     public Vector2 targetPos;
     Quaternion rotation;
+
     public bool moveAnim;
     public bool idleBool;
     public bool attackTrigger;
@@ -108,7 +100,6 @@ public class EnemyInfantry : MonoBehaviour
         attackPower = 35;
         hitRate = 0;
         soldierRange = 5f;
-        shootEndRag = 1.4f;
         reloadSpan = 4.8f;
 
         minSpan = 2.5f;
@@ -120,7 +111,6 @@ public class EnemyInfantry : MonoBehaviour
 
         lookSpan = 0f;
         holdSpan = 0.2f;
-        lieDownSpan = 2.5f;
     }
 
 
@@ -159,8 +149,6 @@ public class EnemyInfantry : MonoBehaviour
         
         if (enemyHP.hp < 1) return;
 
-        //ここからセミオート攻撃モーション(State.Move以外)]
-
         SearchTimeMethod();
         
 
@@ -176,7 +164,7 @@ public class EnemyInfantry : MonoBehaviour
             AccuracyBonus();
 
             //敵がレンジ内の時
-            if (shootRange <= soldierRange && allAmmo != 0 )//!=の後はsoldierMoveではなく元となるSoldierMoveを指定
+            if (shootRange <= soldierRange && allAmmo != 0 )
             {
                 if (idleBool == true)
                 {
@@ -229,7 +217,6 @@ public class EnemyInfantry : MonoBehaviour
                         {
                             isShooting = false;
                             downMotion = true;
-                            shootToDown = true;
                             //moveGoサイン。reloadGoサイン。の処理。
                         }
 
@@ -245,27 +232,25 @@ public class EnemyInfantry : MonoBehaviour
             }
 
             //敵がレンジ外の時
-            else if ((shootRange > soldierRange && allAmmo != 0 && magazine != 0) || allAmmo == 0 )
+            else if ((shootRange > soldierRange && allAmmo != 0 && magazine != 0) || allAmmo == 0)
             {
-                
-                if (outOfRange == true)
+                if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
                 {
-                    if (shootToDown == false)
-                    {
-                        downMotion = true;
-                        DownToIdleMotion();                       
-                    }
-                    else if (shootToDown == true)
+                    isShooting = false;
+                }
+                if (isShooting == false)
+                {
+                    if (outOfRange == true)
                     {
                         DownToIdleMotion();
-                        shootToDown = false;
+                        isShooting = false;
+                        outOfRange = false;
                     }
-                    isShooting = false;
-                    outOfRange = false;
+
+                    lookDelta = 0;
+                    shootDelta = 0;
                 }
 
-                lookDelta = 0;
-                shootDelta = 0;
             }
         }
 
@@ -277,24 +262,6 @@ public class EnemyInfantry : MonoBehaviour
             lookDelta = 0;
             shootDelta = 0;
         }
-
-
-        //射撃後のラグを測る
-        if (shootEnd == true)
-        {
-            shootEndDelta += Time.deltaTime;
-            if (shootEndDelta > shootEndRag)
-            {
-                magazine--;
-                downMotion = true;
-                shootEndDelta = 0;
-                shootEnd = false;
-                shootToDown = true;
-                //move.shootToMove = true;
-                //moveGoサイン。reloadGoサイン。の処理。
-            }
-        }
-
         
     }
 

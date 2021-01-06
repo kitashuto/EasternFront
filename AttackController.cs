@@ -25,7 +25,6 @@ public abstract class AttackController : MonoBehaviour
     public bool upMotion;
     public bool lieDownMotion;
     public bool standUpMotion;
-    public bool shootToDown;
     public bool downMotion;
     public bool reloadMotion;
 
@@ -100,7 +99,7 @@ public abstract class AttackController : MonoBehaviour
 
         //初期値(Mk3)
         attackPower = 35;
-        hitRate = 85;
+        hitRate = 25;
         soldierRange = 5f;
         rifleSE = mk3SE;
         reloadSpan = 4.8f;
@@ -178,6 +177,7 @@ public abstract class AttackController : MonoBehaviour
                         shootSpan = 1.25f;
                         animator.SetTrigger("UpTrigger");
                         upMotion = false;
+                        downMotion = true;
                     }
 
                     if (lookDelta > holdSpan)
@@ -202,14 +202,12 @@ public abstract class AttackController : MonoBehaviour
                         }
                         else if (shootDelta > shootSpan)
                         {
-                            
                             shootDelta = 0f;
                         }
                         else if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
                         {
                             isShooting = false;
-                            downMotion = true;
-                            shootToDown = true;
+                            //downMotion = true; 本来こっちにあったがready起動時の場所に移動させた
                             //moveGoサイン。reloadGoサイン。の処理。
                         }
 
@@ -225,24 +223,23 @@ public abstract class AttackController : MonoBehaviour
             //敵がレンジ外の時
             else if ((shootRange > soldierRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0 && magazine != 0)|| allAmmo == 0 )
             {
-                if (outOfRange == true)
+                if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
                 {
-                    if (shootToDown == false)
-                    {
-                        downMotion = true;
-                        DownToIdleMotion();
-                    }
-                    else if(shootToDown == true)
-                    {
-                        DownToIdleMotion();
-                        shootToDown = false;
-                    }
                     isShooting = false;
-                    outOfRange = false;
+                }
+                if (isShooting == false)
+                {
+                    if (outOfRange == true)
+                    {
+                        DownToIdleMotion();
+                        isShooting = false;
+                        outOfRange = false;
+                    }
+
+                    lookDelta = 0;
+                    shootDelta = 0;
                 }
                 
-                lookDelta = 0;
-                shootDelta = 0;
             }
         }
         
@@ -329,7 +326,6 @@ public abstract class AttackController : MonoBehaviour
                                 Debug.Log("aaaaaaaaaaaaaaaaaaaaaaaa");
                                 magazine--;
                                 downMotion = true;
-                                shootToDown = true;
                                 //moveGoサイン。reloadGoサイン。の処理。
                             }
 
@@ -386,7 +382,6 @@ public abstract class AttackController : MonoBehaviour
                                 Debug.Log("aaaaaaaaaaaaaaaaaaaaaaaa");
                                 magazine--;
                                 downMotion = true;
-                                shootToDown = true;
                                 //moveGoサイン。reloadGoサイン。の処理。
                             }
 
@@ -399,22 +394,16 @@ public abstract class AttackController : MonoBehaviour
 
             //敵がレンジ外の時
             else if ((shootRange > soldierRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0 && magazine != 0) || allAmmo == 0)
-            {
+            {                
                 if (outOfRange == true)
                 {
-                    if (shootToDown == false)
-                    {
-                        standUpMotion = true;
-                        StandUpMotion();
-                    }
-                    else if (shootToDown == true)
-                    {
-                        StandUpMotion();
-                        shootToDown = false;
-                    }
-                    outOfRange = false;
+                     DownToIdleMotion();
+                    isShooting = false;
+                     outOfRange = false;
                 }
 
+                lookDelta = 0;
+                shootDelta = 0;
                 lookDelta = 0;
                 shootDelta = 0;
             }
