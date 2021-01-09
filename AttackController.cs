@@ -62,6 +62,7 @@ public abstract class AttackController : MonoBehaviour
     public bool outOfRange;
     public bool idleMotion = false;
     public bool isShooting;
+    public bool shootAnimationBool;
     public float idleTimer;
     public Move move;
     public InfantryAnimation infantryAnimation;
@@ -104,8 +105,8 @@ public abstract class AttackController : MonoBehaviour
         rifleSE = mk3SE;
         reloadSpan = 4.8f;
 
-        minSpan = 2.5f;
-        maxSpan = 4.5f;
+        minSpan = 4f;
+        maxSpan = 5.5f;
 
         remainingAmmo = 100;
         magazine = 10;
@@ -160,8 +161,7 @@ public abstract class AttackController : MonoBehaviour
 
             //敵がレンジ内の時
             if (shootRange <= soldierRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0 )//!=の後はsoldierMoveではなく元となるSoldierMoveを指定
-            {
-                
+            {                
                 this.lookDelta += Time.deltaTime;//Unityの教科書p212,スクリプト13行目
                 if (lookDelta > lookSpan && magazine >= 1)
                 {
@@ -187,8 +187,8 @@ public abstract class AttackController : MonoBehaviour
                         if (shootDelta > shootSpan && isShooting == false)
                         {//発砲モーション付ける      
                             animator.SetTrigger("FireTrigger");//このアニメが終わるまではmoveできないようにしたい
-                            aud.PlayOneShot(this.rifleSE);
-                            magazine--;
+                            aud.PlayOneShot(this.rifleSE);                            
+                            shootAnimationBool = true;
                             if (probability < hitRate)
                             {
                                 nearEnemy.GetComponent<IDamagable>().AddDamage(attackPower);
@@ -198,17 +198,19 @@ public abstract class AttackController : MonoBehaviour
                             probability = Probability();
                             shootSpan = GetRandomTime();
                             isShooting = true;//ここにいれないと2発目以降MoveのMoveMotion(2)の処理がうまくいかない
-                            
+
                         }
                         else if (shootDelta > shootSpan)
                         {
                             shootDelta = 0f;
                         }
-                        else if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
-                        {
+                        else if (shootAnimationBool == true && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
+                        {                            
+                            magazine--;
                             isShooting = false;
+                            shootAnimationBool = false;
                             //downMotion = true; 本来こっちにあったがready起動時の場所に移動させた
-                            //moveGoサイン。reloadGoサイン。の処理。
+                            //moveGoサイン。reloadGoサイン。の処理。                            
                         }
 
                     }
@@ -223,9 +225,11 @@ public abstract class AttackController : MonoBehaviour
             //敵がレンジ外の時
             else if ((shootRange > soldierRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0 && magazine != 0)|| allAmmo == 0 )
             {
-                if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
+                if (shootAnimationBool == true && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
                 {
+                    magazine--;
                     isShooting = false;
+                    shootAnimationBool = false;
                 }
                 if (isShooting == false)
                 {
@@ -533,7 +537,7 @@ public abstract class AttackController : MonoBehaviour
         //リロード時の行動
         if (magazine == 0 && remainingAmmo >= 1)
         {
-            if (soldierMove.CurrentState != Move.State.Move)
+            if (move.CurrentState != Move.State.Move && move.shootEndFlag != true)
             {
                 reloadDelta += Time.deltaTime;
 
@@ -554,6 +558,7 @@ public abstract class AttackController : MonoBehaviour
                 {
                     animator.SetTrigger("IdleTrigger");
                     upMotion = true;
+                    reloadMotion = true;//ここをtrueにしないと二回目以降のreloadMotionがtrueにならず、そのためリロード時にレンジ外に出ると正しくリロードされない
                     lookDelta = 0f;
                     shootDelta = 0f;
                     magazine += clip;

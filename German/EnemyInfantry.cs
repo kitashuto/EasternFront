@@ -5,6 +5,8 @@ using System.Linq;//配列で使用する。
 
 public class EnemyInfantry : MonoBehaviour
 {
+    public enum State { Attack, Move , Reload};
+    public State CurrentState { get; private set; }
     EnemyHP enemyHP;
 
     public AudioClip g98SE;
@@ -16,10 +18,9 @@ public class EnemyInfantry : MonoBehaviour
     public Move soldierMove;
     public SoldierHP soldierHP;
 
-    public GameObject nearEnemy;         //最も近いオブジェクト
+    public GameObject nearEnemy;//最も近いオブジェクト
     public float searchTime;    //経過時間
     public bool upMotion;
-    public bool lieDownMotion;
     public bool downMotion;
     public bool reloadMotion;
 
@@ -49,21 +50,25 @@ public class EnemyInfantry : MonoBehaviour
     public float minSpan;
     public float maxSpan;
 
-    public bool accuracyBonus1 = false;
-    public bool accuracyBonus2 = false;
+    bool accuracyBonus1 = false;
+    bool accuracyBonus2 = false;
 
     public bool outOfRange;
     public bool idleMotion = false;
     public bool isShooting;
-    public float idleTimer;
-    public Vector2 targetPos;
+    public float moveTimer;
+    public Vector3 targetPos;
+    public float xPosition;
     Quaternion rotation;
 
     public bool moveAnim;
-    public bool idleBool;
+    public bool moveMotion;
     public bool attackTrigger;
     public bool isStop;
     public float speed;
+    public bool shootAnimationBool;
+    public bool moveToFire;
+    public bool attackOrder;
 
     // Start is called before the first frame update
     void Start()
@@ -72,10 +77,12 @@ public class EnemyInfantry : MonoBehaviour
         enemyHP = gameObject.GetComponent<EnemyHP>();
         this.animator = GetComponent<Animator>();
         aud = GetComponent<AudioSource>();
-        targetPos = new Vector2(1.3f, -5.5f);
+        xPosition = this.transform.position.x;
         moveAnim = true;
         isShooting = false;
-        speed = 1.25f;
+        moveToFire = true;
+        attackOrder = false;
+        speed = 1.75f;
     }
 
     // Update is called once per frame
@@ -85,7 +92,10 @@ public class EnemyInfantry : MonoBehaviour
         
         ReloadMethod();
 
+        Debug.Log(CurrentState);
+
         allAmmo = remainingAmmo + magazine;
+        targetPos = new Vector3(xPosition, -5.5f,0f);
     }
 
 
@@ -97,17 +107,17 @@ public class EnemyInfantry : MonoBehaviour
         probability = Probability();
 
         //初期値(Mk3)
-        attackPower = 35;
-        hitRate = 0;
+        attackPower = 45;
+        hitRate = 5;
         soldierRange = 5f;
         reloadSpan = 4.8f;
 
-        minSpan = 2.5f;
-        maxSpan = 4.5f;
+        minSpan = 2.4f;
+        maxSpan = 2.8f;
 
         remainingAmmo = 100;
-        magazine = 100;
-        clip = 100;
+        magazine = 5;
+        clip = 5;
 
         lookSpan = 0f;
         holdSpan = 0.2f;
@@ -119,23 +129,21 @@ public class EnemyInfantry : MonoBehaviour
     public void MoveMethod()
     {
         if (enemyHP.hp < 1) return;
-
+        CurrentState = State.Move;
         if (moveAnim == true)
         {
             animator.SetTrigger("MoveTrigger");
-            animator.SetFloat("Speed", 1.25f);
+            animator.SetFloat("Speed", 1.5f);
             moveAnim = false;
 
             lookDelta = 0f;
             shootDelta = 0f;
             upMotion = true;
-            lieDownMotion = true;
-            outOfRange = false;
-            idleBool = false;            
+            idleMotion = false;            
         }       
-            rotation = Quaternion.LookRotation(Vector3.forward, targetPos);
-            transform.localRotation = rotation;
-            transform.position = Vector2.MoveTowards(transform.position, targetPos, speed * Time.deltaTime);
+        rotation = Quaternion.LookRotation(Vector3.forward, targetPos - transform.position);        
+        transform.rotation = Quaternion.Slerp(this.transform.rotation, rotation, 0.1f);
+        transform.position = Vector2.MoveTowards(transform.position, targetPos, speed * Time.deltaTime);
     }
 
 
@@ -164,15 +172,16 @@ public class EnemyInfantry : MonoBehaviour
             AccuracyBonus();
 
             //敵がレンジ内の時
-            if (shootRange <= soldierRange && allAmmo != 0 )
+            if (shootRange <= soldierRange && allAmmo != 0 && attackOrder == true)//ここで3/2のオンオフboolが必要
             {
-                if (idleBool == true)
+                if (idleMotion == true)
                 {
                     animator.SetTrigger("IdleTrigger");
-                    idleBool = false;
+                    CurrentState = State.Attack;
+                    idleMotion = false;
                 }
 
-                this.lookDelta += Time.deltaTime;//Unityの教科書p212,スクリプト13行目
+                lookDelta += Time.deltaTime;//Unityの教科書p212,スクリプト13行目
                 if (lookDelta > lookSpan && magazine >= 1)
                 {
                     var vec1 = (p2 - p1).normalized;
@@ -183,9 +192,10 @@ public class EnemyInfantry : MonoBehaviour
 
                     if (lookDelta > holdSpan && upMotion == true)
                     {
-                        shootSpan = 1.25f;
+                        shootSpan = GetRandomTime()/3; //メソッドも変数同様何分の１にかけ算できるらしい。
                         animator.SetTrigger("UpTrigger");
                         upMotion = false;
+                        downMotion = true;
                     }
 
                     if (lookDelta > holdSpan)
@@ -196,7 +206,7 @@ public class EnemyInfantry : MonoBehaviour
                         {//発砲モーション付ける      
                             animator.SetTrigger("FireTrigger");//このアニメが終わるまではmoveできないようにしたい
                             aud.PlayOneShot(g98SE);
-                            magazine--;
+                            shootAnimationBool = true;                            
                             if (probability < hitRate)
                             {
                                 nearEnemy.GetComponent<IDamagable>().AddDamage(attackPower);
@@ -205,28 +215,27 @@ public class EnemyInfantry : MonoBehaviour
                             //attackPower = 30;
                             probability = Probability();
                             shootSpan = GetRandomTime();
-                            isShooting = true;//ここにいれないと2発目以降MoveのMoveMotion(2)の処理がうまくいかない
-
+                            isShooting = true;
                         }
                         else if (shootDelta > shootSpan)
                         {
-
                             shootDelta = 0f;
                         }
-                        else if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
+                        else if (shootAnimationBool == true && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
                         {
+                            magazine--;                            
                             isShooting = false;
                             downMotion = true;
+                            shootAnimationBool = false;
                             //moveGoサイン。reloadGoサイン。の処理。
                         }
 
                     }
                 }
                 if (outOfRange == false)
-                {
-                    moveAnim = false;
-                    idleBool = true;
-                    upMotion = true;
+                {                    
+                    idleMotion = true;
+                    upMotion = true;                    
                     outOfRange = true;
                 }
             }
@@ -234,39 +243,77 @@ public class EnemyInfantry : MonoBehaviour
             //敵がレンジ外の時
             else if ((shootRange > soldierRange && allAmmo != 0 && magazine != 0) || allAmmo == 0)
             {
-                if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
+                if (shootAnimationBool == true && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
                 {
+                    magazine--;
                     isShooting = false;
+                    downMotion = true;
+                    shootAnimationBool = false;
                 }
+
                 if (isShooting == false)
                 {
-                    if (outOfRange == true)
-                    {
-                        DownToIdleMotion();
-                        isShooting = false;
-                        outOfRange = false;
+                    if (outOfRange == true && magazine != 0)
+                    {                        
+                        DownToMove();
                     }
 
                     lookDelta = 0;
                     shootDelta = 0;
                 }
 
+                if (outOfRange == false && moveMotion == false)
+                {                    
+                    MoveMethod();
+                }
+            }
+
+            else if ((shootRange < soldierRange && shootRange > soldierRange * 17/20 && allAmmo != 0 && magazine != 0) || allAmmo == 0)
+            {
+                if (moveToFire == false) return;
+                attackOrder = false;
+                MoveMethod();
+            }
+            else if((shootRange <= soldierRange * 17/20 && allAmmo != 0 && magazine != 0) || allAmmo == 0)
+            {
+                attackOrder = true;
+                moveToFire = false;
             }
         }
 
         else if (nearEnemy == null && downMotion == true)
         {
-            DownToIdleMotion();
+            DownToMove();
             downMotion = false;
             isShooting = false;
             lookDelta = 0;
             shootDelta = 0;
-        }
-        
+        }        
     }
 
 
-   
+    public void DownToMove()
+    {
+        if (downMotion == true)
+        {
+            animator.SetTrigger("DownTrigger");
+            moveMotion = true;
+            downMotion = false;
+        }
+
+        moveTimer += Time.deltaTime;
+
+        if (moveTimer > 0.5f && moveMotion == true)//moveTimer>0.1以下だと移動アニメが発動しないのは何故？0.3
+        {            
+            isShooting = false;
+            outOfRange = false;            
+            moveAnim = true;
+            moveTimer = 0f;
+            attackOrder = false;
+            moveToFire = true;
+            moveMotion = false;
+        }
+    }
 
 
 
@@ -274,14 +321,13 @@ public class EnemyInfantry : MonoBehaviour
     {
         if (enemyHP.hp < 1) return;
         //リロード時の行動
+        CurrentState = State.Reload;
         if (magazine == 0 && remainingAmmo >= 1)
         {
-            if (soldierMove.CurrentState != Move.State.Move)
+            if (CurrentState != State.Move)
             {
                 reloadDelta += Time.deltaTime;
 
-
-                //upMotion = false;←これ必要かわからない
                 if (downMotion == true)
                 {
                     animator.SetTrigger("DownTrigger");
@@ -302,13 +348,17 @@ public class EnemyInfantry : MonoBehaviour
                     magazine += clip;
                     remainingAmmo -= clip;
                     reloadDelta = 0;
+                    if ((shootRange > soldierRange && allAmmo != 0 && magazine != 0) || allAmmo == 0)
+                    {
+                        outOfRange = false;
+                        moveAnim = true;
+                    }
                 }
             }
             else
             {
                 reloadDelta = 0;
             }
-
         }
     }
 
@@ -397,28 +447,6 @@ public class EnemyInfantry : MonoBehaviour
     public int Probability()
     {
         return Random.Range(1, 101);
-    }
-
-
-
-    public void DownToIdleMotion()
-    {        
-        if (downMotion == true)
-        {
-            animator.SetTrigger("DownTrigger");
-            idleMotion = true;
-            downMotion = false;
-        }
-
-        idleTimer += Time.deltaTime;
-
-        if (idleTimer > 0.08f && idleMotion == true)
-        {
-            animator.SetTrigger("IdleTrigger");                        
-            idleMotion = false;
-        }
-
-        
     }
 
 

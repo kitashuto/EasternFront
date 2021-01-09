@@ -100,9 +100,7 @@ public class Move : MonoBehaviour
     
 
     void Update()
-    {
-
-        Debug.Log(CurrentState);
+    {        
         speedCycle = speed;
 
         //speedは下限1.5上限3
