@@ -109,7 +109,7 @@ public class EnemyInfantry : MonoBehaviour
         //初期値(Mk3)
         attackPower = 45;
         hitRate = 5;
-        soldierRange = 5f;
+        soldierRange = 6f;
         reloadSpan = 4.8f;
 
         minSpan = 2.4f;
@@ -268,13 +268,13 @@ public class EnemyInfantry : MonoBehaviour
                 }
             }
 
-            else if ((shootRange < soldierRange && shootRange > soldierRange * 17/20 && allAmmo != 0 && magazine != 0) || allAmmo == 0)
+            else if ((shootRange < soldierRange && shootRange > soldierRange * 19/20 && allAmmo != 0 && magazine != 0) || allAmmo == 0)
             {
                 if (moveToFire == false) return;
                 attackOrder = false;
                 MoveMethod();
             }
-            else if((shootRange <= soldierRange * 17/20 && allAmmo != 0 && magazine != 0) || allAmmo == 0)
+            else if((shootRange <= soldierRange * 19/20 && allAmmo != 0 && magazine != 0) || allAmmo == 0)
             {
                 attackOrder = true;
                 moveToFire = false;
@@ -284,7 +284,6 @@ public class EnemyInfantry : MonoBehaviour
         else if (nearEnemy == null && downMotion == true)
         {
             DownToMove();
-            downMotion = false;
             isShooting = false;
             lookDelta = 0;
             shootDelta = 0;

@@ -8,10 +8,12 @@ public class CameraZoom : MonoBehaviour
     Camera cam; //Main CameraのCamera
     private float scroll;
     private float speed;
+    private float cameraSpeed;
 
     void Start()
     {
         speed = 6f;
+        cameraSpeed = 0.32f;
         tf = this.gameObject.GetComponent<Transform>(); //Main CameraのTransformを取得する。
         cam = this.gameObject.GetComponent<Camera>(); //Main CameraのCameraを取得する。
     }
@@ -32,19 +34,19 @@ public class CameraZoom : MonoBehaviour
 
         if (Input.GetKey(KeyCode.W)) //上キーが押されていれば
         {
-            tf.position = tf.position + new Vector3(0.0f, 0.15f, 0.0f); //カメラを上へ移動。
+            tf.position = tf.position + new Vector3(0.0f, cameraSpeed, 0.0f); //カメラを上へ移動。
         }
         else if (Input.GetKey(KeyCode.S)) //下キーが押されていれば
         {
-            tf.position = tf.position + new Vector3(0.0f, -0.15f, 0.0f); //カメラを下へ移動。
+            tf.position = tf.position + new Vector3(0.0f, -cameraSpeed, 0.0f); //カメラを下へ移動。
         }
         if (Input.GetKey(KeyCode.A)) //左キーが押されていれば
         {
-            tf.position = tf.position + new Vector3(-0.15f, 0.0f, 0.0f); //カメラを左へ移動。
+            tf.position = tf.position + new Vector3(-cameraSpeed, 0.0f, 0.0f); //カメラを左へ移動。
         }
         else if (Input.GetKey(KeyCode.D)) //右キーが押されていれば
         {
-            tf.position = tf.position + new Vector3(0.15f, 0.0f, 0.0f); //カメラを右へ移動。
+            tf.position = tf.position + new Vector3(cameraSpeed, 0.0f, 0.0f); //カメラを右へ移動。
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha1)) //上キーが押されていれば
