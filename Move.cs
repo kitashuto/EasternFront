@@ -88,7 +88,7 @@ public class Move : MonoBehaviour
         infantryAttackController.upMotion = true;        
         infantryAttackController.lieDownMotion = true;
         infantryAttackController.outOfRange = false;//これがないと射程外に自分から移動して出て行った後に一瞬gunUpMotionが出て銃を上げた後idleになる
-        transform.localRotation = rotation;
+        //transform.localRotation = rotation;//一瞬で向きを取得するときはここにrotationを書き込む(MoveMotion自体が一瞬しか判定が出ないためSlerpは不可能)
         
     }
 
@@ -113,6 +113,7 @@ public class Move : MonoBehaviour
         }
         else if (downEnd == true && animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 1f)
         {
+            transform.rotation = Quaternion.Slerp(this.transform.rotation, rotation, 0.21f);
             infantryAttackController.lookDelta = 0f;
             infantryAttackController.shootDelta = 0f;
         }
@@ -129,6 +130,7 @@ public class Move : MonoBehaviour
         if (CurrentState == State.Move && infantryAttackController.isShooting == false && downEnd == false && standUpTime == 0)
         {
             if (soldierHP.hp < 1) return;
+            transform.rotation = Quaternion.Slerp(this.transform.rotation, rotation, 0.3f);
             transform.position = Vector2.MoveTowards(transform.position, targetPos, speed * Time.deltaTime);            
 
             var distance = ((Vector2)transform.position - targetPos).sqrMagnitude;
