@@ -166,6 +166,7 @@ public class Move : MonoBehaviour
         {
             Debug.Log("C");
             downAnimBool = true;
+            infantryAttackController.isShooting = false;
             shootToDown = false;
         }
 
