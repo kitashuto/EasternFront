@@ -85,7 +85,8 @@ public class Move : MonoBehaviour
         animator.SetTrigger("MoveTrigger");
         infantryAttackController.lookDelta = 0f;
         infantryAttackController.shootDelta = 0f;
-        infantryAttackController.upMotion = true;        
+        infantryAttackController.upMotion = true;
+        infantryAttackController.beforeStabMotion = true;
         infantryAttackController.lieDownMotion = true;
         infantryAttackController.outOfRange = false;//これがないと射程外に自分から移動して出て行った後に一瞬gunUpMotionが出て銃を上げた後idleになる
         //transform.localRotation = rotation;//一瞬で向きを取得するときはここにrotationを書き込む(MoveMotion自体が一瞬しか判定が出ないためSlerpは不可能)

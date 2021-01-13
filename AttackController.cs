@@ -9,6 +9,8 @@ public abstract class AttackController : MonoBehaviour
 
     public AudioClip mk3SE;
     public AudioClip p14SE;
+    public AudioClip stab1;
+    public AudioClip bayonetHit;
     public string audioClipName;
 
     public AudioClip rifleReloadSE;
@@ -25,9 +27,9 @@ public abstract class AttackController : MonoBehaviour
     public bool upMotion;
     public bool lieDownMotion;
     public bool standUpMotion;
-    public bool downMotion = false;
-    public bool afterStabMotion;
+    public bool downMotion = false;    
     public bool beforeStabMotion;
+    public bool afterStabMotion;
     public bool reloadMotion;
 
     public EnemyHP enemyHPScript;
@@ -57,8 +59,8 @@ public abstract class AttackController : MonoBehaviour
     public float minSpan;
     public float maxSpan;
 
-    public bool accuracyBonus1 = false;
-    public bool accuracyBonus2 = false;
+    bool accuracyBonus1 = false;
+    bool accuracyBonus2 = false;
 
     public bool attackOrder;
     public bool outOfRange;
@@ -67,7 +69,6 @@ public abstract class AttackController : MonoBehaviour
     public bool isShooting;
     public bool isReady;
     public bool shootAnimBool;
-    public float idleTimer;
     public Move move;
     public InfantryAnimation infantryAnimation;
     public string attackMethodName;
@@ -104,7 +105,7 @@ public abstract class AttackController : MonoBehaviour
 
         //初期値(Mk3)
         attackPower = 35;
-        hitRate = 25;
+        hitRate = 15;
         soldierRange = 6f;
         rifleSE = mk3SE;
         reloadSpan = 4.8f;
@@ -164,7 +165,7 @@ public abstract class AttackController : MonoBehaviour
             AccuracyBonus();
 
             //敵がレンジ内の時
-            if (shootRange <= soldierRange && shootRange > 1.2f && soldierMove.CurrentState != Move.State.Move && allAmmo != 0 )//!=の後はsoldierMoveではなく元となるSoldierMoveを指定
+            if (shootRange <= soldierRange && shootRange > 0.8f && soldierMove.CurrentState != Move.State.Move && allAmmo != 0 )//!=の後はsoldierMoveではなく元となるSoldierMoveを指定
             {                
                 this.lookDelta += Time.deltaTime;//Unityの教科書p212,スクリプト13行目
                 if (lookDelta > lookSpan && magazine >= 1)
@@ -178,7 +179,7 @@ public abstract class AttackController : MonoBehaviour
                     
                     if (lookDelta > holdSpan && upMotion == true)
                     {
-                        shootSpan = 1.25f;
+                        shootSpan = GetRandomTime() / 4;
                         animator.SetTrigger("UpTrigger");
                         upMotion = false;
                         isReady = true;
@@ -210,7 +211,7 @@ public abstract class AttackController : MonoBehaviour
                             shootDelta = 0f;
                         }
                         else if (shootAnimBool == true && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
-                        {                            
+                        {
                             magazine--;
                             isShooting = false;
                             move.shootToDown = true;
@@ -219,15 +220,13 @@ public abstract class AttackController : MonoBehaviour
 
                     }
                 }
-                if (outOfRange == false)
+                if (outOfRange == false && shootRange > 0.8f)//ライフルの射程内に入った時の判定
                 {
                     upMotion = true;
                     outOfRange = true;
-                }
+                }                
             }
-
-            //敵がレンジ外の時
-            else if ((shootRange > soldierRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0 && magazine != 0)|| allAmmo == 0 )
+            else if ((shootRange > soldierRange && soldierMove.CurrentState != Move.State.Move && allAmmo != 0 && magazine != 0)|| allAmmo == 0 )//ライフルの射程外に出て行った時の判定
             {
                 if (shootAnimBool == true && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
                 {
@@ -252,7 +251,7 @@ public abstract class AttackController : MonoBehaviour
 
 
             //近接攻撃範囲内の時
-            if (shootRange <= 1.2f && soldierMove.CurrentState != Move.State.Move)//!=の後はsoldierMoveではなく元となるSoldierMoveを指定
+            if (shootRange <= 0.8f && soldierMove.CurrentState != Move.State.Move)//!=の後はsoldierMoveではなく元となるSoldierMoveを指定
             {
                 this.lookDelta += Time.deltaTime;//Unityの教科書p212,スクリプト13行目
                 if (lookDelta > lookSpan)
@@ -266,7 +265,8 @@ public abstract class AttackController : MonoBehaviour
 
                     if (lookDelta > holdSpan && beforeStabMotion == true)
                     {
-                        shootSpan = 1.25f;
+                        shootSpan = GetRandomTime()/5;
+                        hitRate = 50;
                         animator.SetTrigger("BeforeStabTrigger");
                         beforeStabMotion = false;
                         afterStabMotion = true;
@@ -279,14 +279,16 @@ public abstract class AttackController : MonoBehaviour
                         if (shootDelta > shootSpan && isShooting == false)
                         {//発砲モーション付ける      
                             animator.SetTrigger("StabTrigger");//このアニメが終わるまではmoveできないようにしたい
-                            aud.PlayOneShot(this.rifleSE);
+                            aud.PlayOneShot(this.stab1);
                             shootAnimBool = true;
                             if (probability < hitRate)
                             {
-                                nearEnemy.GetComponent<IDamagable>().AddDamage(attackPower * 3);
+                                //aud.PlayOneShot(this.bayonetHit);
+                                nearEnemy.GetComponent<IDamagable>().AddDamage(attackPower);
                             }
 
                             //attackPower = 30;
+                            hitRate = 50;
                             probability = Probability();
                             shootSpan = GetRandomTime();
                             isShooting = true;//ここにいれないと2発目以降MoveのMoveMotion(2)の処理がうまくいかない
@@ -298,26 +300,25 @@ public abstract class AttackController : MonoBehaviour
                         }
                         else if (shootAnimBool == true && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
                         {
-                            magazine--;
                             isShooting = false;
                             shootAnimBool = false;
                         }
 
                     }
                 }
-                if (outOfStabRange == false)
+                if (outOfStabRange == false && isShooting == false)//近接攻撃範囲内に入った時の判定
                 {
+                    DownToIdleMotion();
+                    lookDelta = 0f;
+                    shootDelta = 0f;
                     beforeStabMotion = true;
                     outOfStabRange = true;
                 }
             }
-
-            //近接攻撃範囲外の時
-            else if (shootRange == 1.2f && soldierMove.CurrentState != Move.State.Move)
+            else if (shootRange > 0.8f && soldierMove.CurrentState != Move.State.Move && outOfStabRange == true)//近接攻撃範囲外に出て行った時の判定
             {
                 if (shootAnimBool == true && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
                 {
-                    magazine--;
                     isShooting = false;
                     shootAnimBool = false;
                 }
@@ -325,25 +326,30 @@ public abstract class AttackController : MonoBehaviour
                 {
                     if (outOfStabRange == true)
                     {
-                        DownToIdleMotion();
+                        StabToIdleMotion();
+                        //afterStabMotion = true;
                     }
-                    lookDelta = 0;
-                    shootDelta = 0;
                 }
+                lookDelta = 0f;
+                shootDelta = 0f;
             }
+
+
         }
-        
-
-
-
-        else if (nearEnemy == null && upMotion == false)
+        else if (nearEnemy == null && upMotion == false && shootRange >= 0.8f)//遠距離の時は銃を下ろしてidleに
         {            
             DownToIdleMotion();
             lookDelta = 0;
             shootDelta = 0;
         }
+        else if (nearEnemy == null && beforeStabMotion == false && shootRange < 0.8f)//近距離の時は構えからidleに
+        {
+            StabToIdleMotion();
+            lookDelta = 0;
+            shootDelta = 0;
+        }
 
-        
+
     }
 
 
@@ -371,6 +377,7 @@ public abstract class AttackController : MonoBehaviour
 
 
 
+
     public void StabToIdleMotion()
     {
         if (afterStabMotion == true)
@@ -379,13 +386,11 @@ public abstract class AttackController : MonoBehaviour
             idleMotion = true;
             afterStabMotion = false;
         }
-
-        idleTimer += Time.deltaTime;
-
-        if (idleTimer > 0.08f && idleMotion == true)
+        else if (idleMotion == true && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f)
         {
-            animator.SetTrigger("IdleTrigger");
-            idleTimer = 0;
+            isReady = false;
+            upMotion = true;
+            outOfStabRange = false;
             idleMotion = false;
         }
     }
@@ -403,9 +408,9 @@ public abstract class AttackController : MonoBehaviour
             standUpMotion = false;
         }
 
-        idleTimer += Time.deltaTime;
+        
 
-        if (idleTimer > 1.3f && idleMotion == true)
+        if (idleMotion == true)
         {
             animator.SetTrigger("IdleTrigger");
             idleMotion = false;
@@ -527,7 +532,7 @@ public abstract class AttackController : MonoBehaviour
             if (!accuracyBonus1)
             {
                 accuracyBonus1 = true;
-                hitRate += 20;
+                hitRate += 5;
             }
         }
         else
@@ -535,7 +540,7 @@ public abstract class AttackController : MonoBehaviour
             if (accuracyBonus1)
             {
                 accuracyBonus1 = false;
-                hitRate -= 20;
+                hitRate -= 5;
             }
         }
 
@@ -544,7 +549,7 @@ public abstract class AttackController : MonoBehaviour
             if (!accuracyBonus2)
             {
                 accuracyBonus2 = true;
-                hitRate += 15;
+                hitRate += 5;
             }
         }
         else
@@ -552,7 +557,7 @@ public abstract class AttackController : MonoBehaviour
             if (accuracyBonus2)
             {
                 accuracyBonus2 = false;
-                hitRate -= 15;
+                hitRate -= 5;
             }
         }
     }

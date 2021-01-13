@@ -3,7 +3,21 @@ guid: 4c66667aed443b9479935fd0b5214e22
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - rifleSE: {instanceID: 0}
+  - mk3SE: {fileID: 8300000, guid: 5c59f39a1a8c69443a3930d6a1984271, type: 3}
+  - p14SE: {fileID: 8300000, guid: bc8daeb8da4ce104ba99c87f1be5cbf1, type: 3}
+  - stab1: {fileID: 8300000, guid: 489c5e326247afe428ffc9c55adc8979, type: 3}
+  - bayonetHit: {fileID: 8300000, guid: 3199fc04b804f8b44a702a6e2fd40781, type: 3}
+  - rifleReloadSE: {instanceID: 0}
+  - animator: {instanceID: 0}
+  - aud: {instanceID: 0}
+  - soldierMove: {instanceID: 0}
+  - soldierHP: {instanceID: 0}
+  - nearEnemy: {instanceID: 0}
+  - enemyHPScript: {instanceID: 0}
+  - move: {instanceID: 0}
+  - infantryAnimation: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
